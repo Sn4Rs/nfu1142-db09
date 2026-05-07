@@ -1,0 +1,19 @@
+# Composer dependencies
+/vendor/
+
+#my own docs
+/docs/
+
+# Environment variables (Secrets)
+.env
+
+# Docker Database data (Binary files)
+/db_data/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+*.code-workspace
+
+# Note: schema.sql is NOT ignored so that the database structure is shared with the team.

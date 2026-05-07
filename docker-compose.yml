@@ -1,0 +1,61 @@
+services:
+  # 1. PHP Web 服務
+  db-app:
+    build: .
+    container_name: db09_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db-db
+    networks:
+      - stock-network
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/src/public
+
+  # 2. MariaDB 資料庫
+  db-db:
+    image: mariadb:10.6
+    container_name: db09-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: myPotato
+      MYSQL_DATABASE: db09
+      MYSQL_USER: potatoadmin
+      MYSQL_PASSWORD: mySmolPotato
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db_data:/var/lib/mysql
+    networks:
+      - stock-network
+
+  # 3. phpMyAdmin 管理工具
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: db09-pma
+    restart: always
+    environment:
+      PMA_HOST: db-db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: myPotato
+    ports:
+      - "8082:80"
+    depends_on:
+      - db-db
+    networks:
+      - stock-network
+
+  # 4. Composer 服務 (用於安裝套件)
+  composer:
+    image: composer:latest
+    container_name: db09_composer
+    volumes:
+      - .:/app
+    networks:
+      - stock-network
+
+networks:
+  stock-network:
+    driver: bridge
