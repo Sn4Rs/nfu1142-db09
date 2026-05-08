@@ -12,22 +12,94 @@ use Dotenv\Dotenv;
 // use $_ENV['VAR_NAME'] to access the environment variables
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
+?>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<!--41243214-->
 
-echo "<h1>Welcome to Team 09 Project</h1>";
-echo "<p>Database Host: " . $_ENV['DB_HOST'] . "</p>";
+<head>
+    <meta charset="UTF-8">
+    <title>路邊電力資產管理系統</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
 
-// 嘗試測試資料庫連線
-// datasource name (driver:host=HOST_ADDRESS;dbname=DATABASE_NAME;port=PORT_NUMBER) -->what to connect to
-// php data object (dsn;username;password) -->actual connection
-try {
-    $dsn = "mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'] . ";port=" . $_ENV['DB_PORT'];
-    $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "<p style='color: green;'>Successfully connected to the database!</p>";
-} catch (PDOException $e) {
-    // 若連線失敗則顯示錯誤訊息
-    echo "<p style='color: red;'>Database connection failed: " . $e->getMessage() . "</p>";
-}
+<body>
 
-// 顯示 PHP 系統資訊 (開發階段測試用)
-phpinfo();
+    <div class="sidebar"> <!--main menu-->
+        <h3>清單</h3>
+        <a href="assets.php">資產總表</a>
+        <a href="inspections.php">檢查紀錄表</a>
+        <a href="index.php">待修清單</a>
+    </div>
+
+    <div class="main">
+
+        <?php
+        // connect to db and test connection
+        try {
+            $dsn = "mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'] . ";port=" . $_ENV['DB_PORT'];
+            $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            echo "<p style='color: red;'>Database connection failed: " . $e->getMessage() . "</p>";
+        }
+        ?>
+
+        <h1>路邊電力資產管理系統</h1>
+        <p>Database Host: <?= htmlspecialchars($_ENV['DB_HOST']) ?></p>
+
+
+
+        <?php
+        // query assets with risk score >= 50, join with InspectionLog
+        if (isset($pdo)):
+            try {
+                $sql = "SELECT pa.asset_id, pa.type, il.log_id, il.risk_score, il.observation, il.inspec_time 
+                FROM PowerAsset pa
+                JOIN InspectionLog il ON pa.asset_id = il.asset_id
+                WHERE il.risk_score >= 50
+                ORDER BY il.risk_score DESC";
+                $stmt = $pdo->query($sql);
+                $highRiskAssets = $stmt->fetchAll(PDO::FETCH_ASSOC); // fetch high risk results
+            } catch (PDOException $e) {
+                $highRiskAssets = [];
+            }
+            ?>
+
+            <h2 id="high-risk">危急待修</h2>
+            <p>風險分數 >= 50降序</p>
+            <?php if (count($highRiskAssets) > 0): ?>
+                <table border="1">
+                    <thead>
+                        <tr>
+                            <th>資產編號</th>
+                            <th>資產類別</th>
+                            <th>風險分數</th>
+                            <th>觀察回報</th>
+                            <th>檢查時間</th>
+                            <th>處理狀況</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($highRiskAssets as $asset): ?>
+                            <tr style="color: red; font-weight: bold;">
+                                <td><?= htmlspecialchars($asset['asset_id']) ?></td>
+                                <td><?= htmlspecialchars($asset['type']) ?></td>
+                                <td><?= htmlspecialchars($asset['risk_score']) ?></td>
+                                <td><?= htmlspecialchars($asset['observation']) ?></td>
+                                <td><?= htmlspecialchars($asset['inspec_time']) ?></td>
+                                <td><a href="inspec-details.php?id=<?= urlencode($asset['log_id']) ?>">檢視細節</a></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p>目前無高風險資產紀錄。</p>
+            <?php endif; ?>
+
+
+        </div>
+    </body>
+
+    </html>
+<?php endif; ?>

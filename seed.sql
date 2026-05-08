@@ -31,7 +31,9 @@ INSERT INTO `Inspector` (`inspector_id`, `name`) VALUES
 -- 6. Health (History)
 INSERT INTO `Health` (`asset_id`, `install_date`, `expected_lifespan`, `last_inspection_date`, `health_level`, `current_status`, `valid_from`, `valid_to`) VALUES
 ('ASSET001', '2020-01-01', 25, '2023-12-01', '優', '運作中', '2020-01-01 00:00:00', NULL),
-('ASSET002', '2015-05-20', 15, '2024-01-15', '良', '運作中', '2015-05-20 00:00:00', NULL);
+('ASSET002', '2015-05-20', 15, '2024-01-15', '良', '運作中', '2015-05-20 00:00:00', NULL),
+('ASSET003', '2010-10-10', 10, '2024-01-20', '危險', '維修中', '2010-10-10 00:00:00', '2025-01-01'),
+('ASSET004', '2023-01-01', 20, '2024-01-01', '優', '運作中', '2023-01-01 00:00:00', NULL);
 
 -- 7. InspectionLog
 INSERT INTO `InspectionLog` (`log_id`, `asset_id`, `inspector_id`, `observation`, `risk_score`, `photo_url`, `inspec_time`) VALUES

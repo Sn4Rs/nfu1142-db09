@@ -18,10 +18,10 @@ CREATE TABLE IF NOT EXISTS `Health` (
   `last_inspection_date` date comment '上次檢查日期',
   `health_level` enum('優', '良', '待修', '危險') comment '健康程度',
   `current_status` enum('運作中', '維修中', '報廢') comment '目前狀態',
-  `valid_from` datetime NOT NULL,
-  `valid_to` datetime,
+  `valid_from` datetime NOT NULL comment 'Record start date',
+  `valid_to` datetime comment 'Estimated end of life (valid_from + expected_lifespan)',
   PRIMARY KEY (`asset_id`, `valid_from`)
-) COMMENT = 'Ensure no overlapping valid_from / valid_to per asset';
+) COMMENT = 'valid_to is defined as valid_from + expected lifespan';
 
 CREATE TABLE IF NOT EXISTS `Sector` (
   `sector_id` varchar(50) PRIMARY KEY NOT NULL,

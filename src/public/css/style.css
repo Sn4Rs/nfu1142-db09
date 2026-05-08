@@ -1,0 +1,155 @@
+/* General Layout */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.main {
+    margin-left: 210px;
+    padding: 20px;
+}
+
+/* Sidebar Navigation */
+.sidebar {
+    height: 100%;
+    width: 200px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #333;
+    padding-top: 20px;
+    color: white;
+}
+
+.sidebar h3 {
+    padding: 0 15px;
+}
+
+.sidebar a {
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 16px;
+    color: #ccc;
+    display: block;
+}
+
+.sidebar a:hover {
+    background-color: #555;
+    color: white;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f8f9fa;
+}
+
+/* Hover Tooltips */
+.hover-info {
+    color: #0066cc;
+    cursor: help;
+    text-decoration: underline dotted;
+}
+
+#tooltip {
+    position: absolute;
+    display: none;
+    background: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    white-space: pre-line;
+}
+
+/* Status Colors & Badges */
+.status-危險 { color: red; font-weight: bold; }
+.status-待修 { color: orange; font-weight: bold; }
+.status-良 { color: blue; }
+.status-優 { color: green; }
+
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: white;
+}
+.bg-success { background: #28a745; }
+.bg-warning { background: #ffc107; color: #333; }
+.bg-danger { background: #dc3545; }
+
+/* Detail Card (for single record views) */
+.detail-card {
+    border: 1px solid #ccc;
+    padding: 20px;
+    max-width: 600px;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.label {
+    font-weight: bold;
+    width: 120px;
+    display: inline-block;
+}
+
+/* Text Status Colors */
+.text-danger { color: #dc3545; font-weight: bold; }
+.text-success { color: #28a745; font-weight: bold; }
+
+/* Utilities */
+.back-link {
+    display: block;
+    margin-bottom: 20px;
+    color: #0066cc;
+    text-decoration: none;
+}
+
+h2 {
+    border-left: 5px solid #333;
+    padding-left: 10px;
+    margin-top: 40px;
+}
+
+/* Search Bar */
+.search-container {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.search-container input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 250px;
+}
+
+.search-container button {
+    padding: 8px 16px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.search-container button:hover {
+    background-color: #555;
+}
