@@ -73,4 +73,20 @@ This is a PHP-based web application integrated with MariaDB, designed for managi
 Once the containers are up and the schema is imported, visit [http://localhost:8080](http://localhost:8080). You should see a "Successfully connected to the database!" message in green.
 
 ---
+
+## 🗂 Database Structure
+
+![ER Diagram](ER Diagram.png)
+
+The database is centered on `PowerAsset` records and their relationships to inspection, maintenance, and specification data.
+
+- `PowerAsset` links to `Sector` for location details and to `AssetSpec` for equipment specifications.
+- `InspectionLog` records inspections and risk scores for each asset, with foreign keys to `PowerAsset` and `Inspector`.
+- `Health` stores periodic health snapshots for assets, including status and lifespan tracking.
+- `MaintenanceLog` tracks repairs for assets and connects to `MaintenanceParts` for replacement part usage.
+- `AssetSpec` is associated with `Manufacturer` metadata.
+
+This structure supports asset tracking, risk-based inspection workflows, maintenance history, and equipment inventory details.
+
+---
 **Team 09** - 2026
