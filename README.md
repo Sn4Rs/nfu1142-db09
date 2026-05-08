@@ -76,7 +76,7 @@ Once the containers are up and the schema is imported, visit [http://localhost:8
 
 ## 🗂 Database Structure
 
-![ER Diagram](ER Diagram.png)
+![ER Diagram](ER-Diagram.png)
 
 The database is centered on `PowerAsset` records and their relationships to inspection, maintenance, and specification data.
 
