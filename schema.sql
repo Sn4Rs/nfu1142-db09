@@ -3,28 +3,28 @@
 CREATE DATABASE IF NOT EXISTS `db09`;
 USE `db09`;
 
-CREATE TABLE IF NOT EXISTS `PowerAsset` (
-  `asset_id` varchar(10) PRIMARY KEY NOT NULL,
+CREATE TABLE IF NOT EXISTS `Powerasset` (
+  `asset_id` varchar(10) PRIMARY KEY NOT NULL comment '資產ID',
   `sector_id` varchar(50) NOT NULL comment '區域id',
-  `type` varchar(20) comment '電塔,電線桿',
+  `type` varchar(20)  NOT NULL comment '電塔,電線桿...',
   `spec_id` varchar(50) NOT NULL comment '規格id',
   `gps` point comment '地理位置'
 );
 
 CREATE TABLE IF NOT EXISTS `Health` (
-  `asset_id` varchar(10) NOT NULL,
+  `asset_id` varchar(10) NOT NULL COMMENT '資產ID',
   `install_date` date comment '安裝日期',
-  `expected_lifespan` int comment '預計壽命',
+  `expected_lifespan` int NOT NULL comment '預計壽命',
   `last_inspection_date` date comment '上次檢查日期',
   `health_level` enum('優', '良', '待修', '危險') comment '健康程度',
   `current_status` enum('運作中', '維修中', '報廢') comment '目前狀態',
-  `valid_from` datetime NOT NULL comment 'Record start date',
-  `valid_to` datetime comment 'Estimated end of life (valid_from + expected_lifespan)',
+  `valid_from` datetime NOT NULL comment '開始運行日',
+  `valid_to` datetime comment '汰換日',
   PRIMARY KEY (`asset_id`, `valid_from`)
 ) COMMENT = 'valid_to is defined as valid_from + expected lifespan';
 
 CREATE TABLE IF NOT EXISTS `Sector` (
-  `sector_id` varchar(50) PRIMARY KEY NOT NULL,
+  `sector_id` varchar(50) PRIMARY KEY NOT NULL comment '區域ID',
   `feeder_area` varchar(10) comment '饋線區域',
   `street` varchar(100) comment '街道',
   `city` varchar(50) comment '城市',
@@ -33,92 +33,152 @@ CREATE TABLE IF NOT EXISTS `Sector` (
 );
 
 CREATE TABLE IF NOT EXISTS `Inspector` (
-  `inspector_id` varchar(10) PRIMARY KEY NOT NULL,
+  `inspector_id` varchar(10) PRIMARY KEY NOT NULL comment '檢查員ID',
   `name` varchar(50) comment '檢查員姓名'
 );
 
-CREATE TABLE IF NOT EXISTS `InspectionLog` (
-  `log_id` varchar(50) PRIMARY KEY NOT NULL,
-  `asset_id` varchar(10) NOT NULL,
-  `inspector_id` varchar(10) NOT NULL,
+CREATE TABLE IF NOT EXISTS `Inspectionlog` (
+  `log_id` varchar(50) PRIMARY KEY NOT NULL comment '檢查紀錄ID',
+  `asset_id` varchar(10) NOT NULL comment '資產ID',
+  `inspector_id` varchar(10) NOT NULL comment '檢查員ID',
   `observation` text comment '觀察結果',
   `risk_score` int comment '風險分數' CHECK (`risk_score` BETWEEN 0 AND 100),
-  `photo_url` varchar(255) comment '照片網址',
-  `inspec_time` datetime comment '檢查時間'
+  `photo_url` varchar(255) NOT NULL comment '照片網址',
+  `inspec_time` datetime NOT NULL comment '檢查時間'
 ) COMMENT = 'risk_score range: 0–100';
 
-CREATE TABLE IF NOT EXISTS `AssetSpec` (
-  `spec_id` varchar(50) PRIMARY KEY NOT NULL,
-  `voltage` int comment '電壓',
-  `capacity` int comment '容量',
-  `model` varchar(50) comment '型號',
-  `manufacturer_id` varchar(30) NOT NULL
+CREATE TABLE IF NOT EXISTS `Photos`(
+  `photo_id` varchar(50) PRIMARY KEY NOT NULL comment '照片ID',
+  `log_id` varchar(50) NOT NULL comment '檢查紀錄ID',
+  `url` varchar(255) NOT NULL comment '照片網址',
+  FOREIGN KEY (`log_id`) REFERENCES `Inspectionlog` (`log_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `Assetspec` (
+  `spec_id` varchar(50) PRIMARY KEY NOT NULL comment '規格ID',
+  `voltage` int comment '額定電壓(V)',
+  `amperage` int comment '最大電流(A)',
+  `model` varchar(50) NOT NULL comment '型號',
+  `manufacturer_id` varchar(30) NOT NULL comment '製造商ID'
 );
 
 CREATE TABLE IF NOT EXISTS `Manufacturer` (
-  `manufacturer_id` varchar(30) PRIMARY KEY NOT NULL,
+  `manufacturer_id` varchar(30) PRIMARY KEY NOT NULL comment '製造商ID',
   `name` varchar(50) comment '製造商名稱',
-  `country` varchar(50) comment '國家'
+  `country` varchar(50) comment '註冊國家'
 );
 
-CREATE TABLE IF NOT EXISTS `MaintenanceLog` (
-  `maint_id` varchar(50) PRIMARY KEY NOT NULL,
-  `asset_id` varchar(10) NOT NULL,
+CREATE TABLE IF NOT EXISTS `Maintenancelog` (
+  `maint_id` varchar(50) PRIMARY KEY NOT NULL comment '維修紀錄ID',
+  `technician_id` varchar(10) NOT NULL comment '技術員ID',
+  `asset_id` varchar(10) NOT NULL comment '資產ID',
   `action` text comment '維修動作',
   `cost` decimal(10,2) comment '維修成本',
   `details` text comment '維修細節',
   `maint_time` datetime comment '維修時間'
 );
 
-CREATE TABLE IF NOT EXISTS `MaintenanceParts` (
-  `part_id` varchar(50) NOT NULL,
-  `maint_id` varchar(50) NOT NULL,
+CREATE TABLE IF NOT EXISTS `Partsrequest` (
+  `request_id` varchar(50) PRIMARY KEY NOT NULL comment '零件申請單ID',
+  `maint_id` varchar(50) NOT NULL comment '維修紀錄ID',
+  `technician_id` varchar(10) NOT NULL comment '技術員ID',
+  `status` enum('待審', '批准', '拒絕') NOT NULL comment '零件申請單狀態',
+  `request_time` datetime NOT NULL comment '申請時間'
+);
+
+CREATE TABLE IF NOT EXISTS `Req_part` (
+  `request_id` varchar(50) NOT NULL COMMENT '零件申請單ID',
+  `part_id` varchar(50) NOT NULL comment '零件名稱',
+  `req_qty` int NOT NULL comment '申請數量',
+  `status` enum('待審', '批准', '拒絕')NOT NULL comment '零件申請狀態'
+);
+
+CREATE TABLE IF NOT EXISTS `Technician` (
+  `technician_id` varchar(10) PRIMARY KEY NOT NULL comment '技術員ID',
+  `technician_name` varchar(50) NOT NULL comment '技術員姓名'
+);
+
+CREATE TABLE IF NOT EXISTS `Maintenanceparts` (
+  `part_id` varchar(50) NOT NULL COMMENT '零件ID',
+  `maint_id` varchar(50) NOT NULL COMMENT '維修紀錄ID',
   `qty_used` int NOT NULL comment '使用數量',
   PRIMARY KEY (`part_id`, `maint_id`)
 );
 
-CREATE TABLE IF NOT EXISTS `PartSpecs` (
-  `part_id` varchar(50) PRIMARY KEY NOT NULL,
+CREATE TABLE IF NOT EXISTS `Partspecs` (
+  `part_id` varchar(50) PRIMARY KEY NOT NULL comment '零件ID',
   `part_name` varchar(50) comment '零件名稱',
   `stock` int comment '庫存',
   `unit_cost` decimal(10,2) comment '單價',
   `provider` varchar(50) NOT NULL comment '供應商'
 );
 
-CREATE INDEX IF NOT EXISTS `PowerAsset_index_0` ON `PowerAsset` (`spec_id`);
+-- =========================
+-- Indexes
+-- =========================
 
-CREATE INDEX IF NOT EXISTS `Health_index_1` ON `Health` (`current_status`, `health_level`);
+-- Powerasset
+CREATE INDEX IF NOT EXISTS `idx_powerasset_spec`       ON `Powerasset`      (`spec_id`);
 
-CREATE INDEX IF NOT EXISTS `InspectionLog_index_2` ON `InspectionLog` (`inspector_id`);
+-- Health
+CREATE INDEX IF NOT EXISTS `idx_health_status_level`   ON `Health`          (`current_status`, `health_level`);
 
-CREATE INDEX IF NOT EXISTS `InspectionLog_index_3` ON `InspectionLog` (`inspec_time`);
+-- Inspectionlog
+CREATE INDEX IF NOT EXISTS `idx_insplog_inspector`     ON `Inspectionlog`   (`inspector_id`);
+CREATE INDEX IF NOT EXISTS `idx_insplog_time`          ON `Inspectionlog`   (`inspec_time`);
+CREATE INDEX IF NOT EXISTS `idx_insplog_asset_time`    ON `Inspectionlog`   (`asset_id`, `inspec_time`);
 
-CREATE INDEX IF NOT EXISTS `InspectionLog_index_4` ON `InspectionLog` (`asset_id`, `inspec_time`);
+-- Maintenancelog
+CREATE INDEX IF NOT EXISTS `idx_maintlog_time`         ON `Maintenancelog`  (`maint_time`);
+CREATE INDEX IF NOT EXISTS `idx_maintlog_asset_time`   ON `Maintenancelog`  (`asset_id`, `maint_time`);
 
-CREATE INDEX IF NOT EXISTS `MaintenanceLog_index_5` ON `MaintenanceLog` (`maint_time`);
+-- Partspecs
+CREATE INDEX IF NOT EXISTS `idx_partspecs_stock`       ON `Partspecs`       (`stock`);
+CREATE INDEX IF NOT EXISTS `idx_partspecs_unit_cost`   ON `Partspecs`       (`unit_cost`);
 
-CREATE INDEX IF NOT EXISTS `MaintenanceLog_index_6` ON `MaintenanceLog` (`asset_id`, `maint_time`);
-
-CREATE INDEX IF NOT EXISTS `PartSpecs_index_7` ON `PartSpecs` (`stock`);
-
-CREATE INDEX IF NOT EXISTS `PartSpecs_index_8` ON `PartSpecs` (`unit_cost`);
+-- Partsrequest
+CREATE INDEX IF NOT EXISTS `idx_partsreq_maint`        ON `Partsrequest`    (`maint_id`);
+CREATE INDEX IF NOT EXISTS `idx_partsreq_technician`   ON `Partsrequest`    (`technician_id`);
 
 
+-- =========================
+-- Foreign Keys
+-- =========================
 
-ALTER TABLE `PowerAsset` ADD FOREIGN KEY (`spec_id`) REFERENCES `AssetSpec` (`spec_id`);
+-- Powerasset
+ALTER TABLE `Powerasset`
+  ADD FOREIGN KEY (`spec_id`)   REFERENCES `Assetspec` (`spec_id`),
+  ADD FOREIGN KEY (`sector_id`) REFERENCES `Sector` (`sector_id`);
 
-ALTER TABLE `AssetSpec` ADD FOREIGN KEY (`manufacturer_id`) REFERENCES `Manufacturer` (`manufacturer_id`);
+-- Assetspec
+ALTER TABLE `Assetspec`
+  ADD FOREIGN KEY (`manufacturer_id`) REFERENCES `Manufacturer` (`manufacturer_id`);
 
-ALTER TABLE `PowerAsset` ADD FOREIGN KEY (`sector_id`) REFERENCES `Sector` (`sector_id`);
+-- Health
+ALTER TABLE `Health`
+  ADD FOREIGN KEY (`asset_id`) REFERENCES `Powerasset` (`asset_id`);
 
-ALTER TABLE `Health` ADD FOREIGN KEY (`asset_id`) REFERENCES `PowerAsset` (`asset_id`);
+-- Inspectionlog
+ALTER TABLE `Inspectionlog`
+  ADD FOREIGN KEY (`asset_id`)     REFERENCES `Powerasset` (`asset_id`),
+  ADD FOREIGN KEY (`inspector_id`) REFERENCES `Inspector`  (`inspector_id`);
 
-ALTER TABLE `InspectionLog` ADD FOREIGN KEY (`asset_id`) REFERENCES `PowerAsset` (`asset_id`);
+-- Maintenancelog
+ALTER TABLE `Maintenancelog`
+  ADD FOREIGN KEY (`asset_id`)      REFERENCES `Powerasset` (`asset_id`),
+  ADD FOREIGN KEY (`technician_id`) REFERENCES `Technician` (`technician_id`);
 
-ALTER TABLE `InspectionLog` ADD FOREIGN KEY (`inspector_id`) REFERENCES `Inspector` (`inspector_id`);
+-- Maintenanceparts
+ALTER TABLE `Maintenanceparts`
+  ADD FOREIGN KEY (`maint_id`) REFERENCES `Maintenancelog` (`maint_id`),
+  ADD FOREIGN KEY (`part_id`)  REFERENCES `Partspecs`      (`part_id`);
 
-ALTER TABLE `MaintenanceLog` ADD FOREIGN KEY (`asset_id`) REFERENCES `PowerAsset` (`asset_id`);
+-- Partsrequest
+ALTER TABLE `Partsrequest`
+  ADD FOREIGN KEY (`maint_id`)      REFERENCES `Maintenancelog` (`maint_id`),
+  ADD FOREIGN KEY (`technician_id`) REFERENCES `Technician`     (`technician_id`);
 
-ALTER TABLE `MaintenanceParts` ADD FOREIGN KEY (`maint_id`) REFERENCES `MaintenanceLog` (`maint_id`);
-
-ALTER TABLE `MaintenanceParts` ADD FOREIGN KEY (`part_id`) REFERENCES `PartSpecs` (`part_id`);
+-- Req_part
+ALTER TABLE `Req_part`
+  ADD FOREIGN KEY (`request_id`) REFERENCES `Partsrequest` (`request_id`),
+  ADD FOREIGN KEY (`part_id`)    REFERENCES `Partspecs`    (`part_id`);
