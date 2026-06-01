@@ -32,29 +32,38 @@ CREATE TABLE IF NOT EXISTS `Sector` (
   `country` varchar(50) comment '國家'
 );
 
-CREATE TABLE IF NOT EXISTS `Employees`{
+CREATE TABLE IF NOT EXISTS `Employees`(
   `id_num` varchar(10) PRIMARY KEY NOT NULL comment '員工ID',
   `fullname` varchar(100) NOT NULL comment '姓名',
   `role` enum('Inspector', 'Technician','assetmanager','deptmanager') NOT NULL comment '身分組',
-  `userhandle` varchar(50) NOT NULL comment '帳號',
-  `userpwd` varchar(255) NOT NULL comment '密碼'
-}
+  `account` varchar(50) NOT NULL comment '帳號',
+  `userpwd` varchar(255) NOT NULL comment '密碼',
+  `pwdhash` varchar(255) NOT NULL comment '密碼雜湊值',
+  `status` enum('active', 'inactive') NOT NULL comment '帳號狀態',
+  `email` varchar(100) comment '電子郵件',
+  `created_at` datetime NOT NULL comment '帳號建立時間',
+  `updated_at` datetime comment '帳號更新時間'
+);
 
 CREATE TABLE IF NOT EXISTS `Inspectionlog` (
-  `log_id` varchar(50) PRIMARY KEY NOT NULL comment '檢查紀錄ID',
+  `inspec_id` varchar(50) PRIMARY KEY NOT NULL comment '檢查紀錄ID',
   `asset_id` varchar(10) NOT NULL comment '資產ID',
   `inspector_id` varchar(10) NOT NULL comment '檢查員ID',
   `observation` text comment '觀察結果',
   `risk_score` int comment '風險分數' CHECK (`risk_score` BETWEEN 0 AND 100),
-  `photo_url` varchar(255) NOT NULL comment '照片網址',
   `inspec_time` datetime NOT NULL comment '檢查時間'
 ) COMMENT = 'risk_score range: 0–100';
 
 CREATE TABLE IF NOT EXISTS `Photos`(
   `photo_id` varchar(50) PRIMARY KEY NOT NULL comment '照片ID',
-  `log_id` varchar(50) NOT NULL comment '檢查紀錄ID',
+  `asset_id` varchar(10) NOT NULL comment '資產ID',
+  `inspec_id` varchar(50) comment '檢查紀錄ID',
+  `maint_id` varchar(50) comment '維修紀錄ID',
   `url` varchar(255) NOT NULL comment '照片網址',
-  FOREIGN KEY (`log_id`) REFERENCES `Inspectionlog` (`log_id`)
+  `filename` varchar(255) comment '原始檔名',
+  `uploaded_by` varchar(10) NOT NULL comment '上傳人員',
+  `uploaded_at` datetime NOT NULL comment '上傳時間',
+  `is_deleted` boolean NOT NULL DEFAULT FALSE comment '是否已刪除'
 );
 
 CREATE TABLE IF NOT EXISTS `Assetspec` (
@@ -76,24 +85,36 @@ CREATE TABLE IF NOT EXISTS `Maintenancelog` (
   `technician_id` varchar(10) NOT NULL comment '技術員ID',
   `asset_id` varchar(10) NOT NULL comment '資產ID',
   `action` text comment '維修動作',
-  `cost` decimal(10,2) comment '維修成本',
   `details` text comment '維修細節',
-  `maint_time` datetime comment '維修時間'
+  `maint_time` datetime comment '維修時間',
+  `status` enum('待處理','處理中','缺件','已完成','已簽核') NOT NULL comment '維修狀態',
+  `scheduled_time` datetime comment '排定維修時間',
+  `assigned_by` varchar(10) comment '指派人員',
+  `approved_by` varchar(10) comment '簽核主管',
+  `approved_at` datetime comment '簽核時間',
+  `work_hours` decimal(5,2) comment '維修工時',
+  `labor_cost` decimal(10,2) comment '工時費用',
+  `material_cost` decimal(10,2) comment '材料費用',
+  `total_cost` decimal(10,2) comment '總費用'
 );
 
 CREATE TABLE IF NOT EXISTS `Partsrequest` (
   `request_id` varchar(50) PRIMARY KEY NOT NULL comment '零件申請單ID',
   `maint_id` varchar(50) NOT NULL comment '維修紀錄ID',
   `technician_id` varchar(10) NOT NULL comment '技術員ID',
-  `status` enum('待審', '批准', '拒絕') NOT NULL comment '零件申請單狀態',
-  `request_time` datetime NOT NULL comment '申請時間'
+  `status` enum('待審', '批准', '駁回') NOT NULL comment '零件申請單狀態',
+  `request_time` datetime NOT NULL comment '申請時間',
+  `approved_by` varchar(10) comment '批核主管',
+  `approved_at` datetime comment '審核時間',
+  `reject_reason` text comment '駁回原因'
 );
 
 CREATE TABLE IF NOT EXISTS `Req_part` (
   `request_id` varchar(50) NOT NULL COMMENT '零件申請單ID',
   `part_id` varchar(50) NOT NULL comment '零件名稱',
   `req_qty` int NOT NULL comment '申請數量',
-  `status` enum('待審', '批准', '拒絕')NOT NULL comment '零件申請狀態'
+  `status` enum('待審', '批准', '駁回')NOT NULL comment '零件申請狀態',
+  PRIMARY KEY (`request_id`, `part_id`)
 );
 
 
@@ -108,8 +129,47 @@ CREATE TABLE IF NOT EXISTS `Partspecs` (
   `part_id` varchar(50) PRIMARY KEY NOT NULL comment '零件ID',
   `part_name` varchar(50) comment '零件名稱',
   `stock` int comment '庫存',
+  `safe_stock` int comment '安全庫存',
+  `reorder_qty` int comment '建議補貨量',
+  `last_check_time` datetime comment '最後盤點時間',
   `unit_cost` decimal(10,2) comment '單價',
   `provider` varchar(50) NOT NULL comment '供應商'
+);
+
+CREATE TABLE IF NOT EXISTS `Notification` (
+  `notification_id` varchar(50) PRIMARY KEY NOT NULL comment '通知待辦編號',
+  `receiver_id` varchar(10) NOT NULL comment '接收人員',
+  `receiver_role` enum('Inspector', 'Technician','assetmanager','deptmanager') NOT NULL comment '接收角色',
+  `source_type` varchar(50) NOT NULL comment '來源功能，如巡檢、維修、缺件等',
+  `source_id` varchar(50) NOT NULL comment '來源資料編號',
+  `title` varchar(100) NOT NULL comment '通知標題',
+  `content` text comment '通知內容',
+  `is_read` boolean NOT NULL DEFAULT FALSE comment '是否已讀',
+  `created_at` datetime NOT NULL comment '建立時間',
+  `read_at` datetime comment '讀取時間'
+);
+
+CREATE TABLE IF NOT EXISTS `Auditlog`(
+  `audit_id` varchar(50) PRIMARY KEY NOT NULL comment '稽核紀錄編號',
+  `employee_id` varchar(10) NOT NULL comment '操作人員',
+  `function_name` varchar(100) NOT NULL comment '操作功能名稱',
+  `action_type` enum('新增','修改','刪除','簽核','登入','匯入') NOT NULL comment '操作類型'
+);
+
+CREATE TABLE IF NOT EXISTS `Importbatch`(
+  `batch_id` varchar(50) PRIMARY KEY NOT NULL comment '匯入批次編號',
+  `file_name` varchar(255) NOT NULL comment '上傳檔名',
+  `uploaded_by` varchar(10) NOT NULL comment '上傳人員',
+  `total_count` int NOT NULL comment '總筆數',
+  `success_count` int NOT NULL comment '成功筆數',
+  `fail_count` int NOT NULL comment '失敗筆數',
+  `status` enum('驗證中','成功','部分失敗','失敗') NOT NULL comment '匯入處理狀態',
+  `created_at` datetime NOT NULL comment '匯入時間'
+);
+
+CREATE TABLE IF NOT EXISTS `Importerror`(
+  `error_id` varchar(50) PRIMARY KEY NOT NULL comment '匯入錯誤編號',
+  `batch_id` varchar(50) NOT NULL comment '所屬匯入批次'
 );
 
 
@@ -124,7 +184,7 @@ CREATE INDEX IF NOT EXISTS `idx_powerasset_spec`       ON `Powerasset`      (`sp
 CREATE INDEX IF NOT EXISTS `idx_health_status_level`   ON `Health`          (`current_status`, `health_level`);
 
 -- Employees
-CREATE INDEX IF NOT EXISTS `idx_employees_userhandle`      ON `Employees`       (`userhandle`,'userpwd');
+CREATE INDEX IF NOT EXISTS `idx_employees_account`      ON `Employees`       (`account`,`userpwd`);
 CREATE INDEX IF NOT EXISTS `idx_employees_role`            ON `Employees`       (`role`);
 
 -- Inspectionlog
@@ -135,6 +195,10 @@ CREATE INDEX IF NOT EXISTS `idx_insplog_asset_time`    ON `Inspectionlog`   (`as
 -- Maintenancelog
 CREATE INDEX IF NOT EXISTS `idx_maintlog_time`         ON `Maintenancelog`  (`maint_time`);
 CREATE INDEX IF NOT EXISTS `idx_maintlog_asset_time`   ON `Maintenancelog`  (`asset_id`, `maint_time`);
+
+-- Photos
+CREATE INDEX IF NOT EXISTS `idx_photos_inspec`            ON `Photos`          (`inspec_id`);
+CREATE INDEX IF NOT EXISTS `idx_photos_maint`            ON `Photos`          (`maint_id`);
 
 -- Partspecs
 CREATE INDEX IF NOT EXISTS `idx_partspecs_stock`       ON `Partspecs`       (`stock`);
@@ -170,7 +234,16 @@ ALTER TABLE `Inspectionlog`
 -- Maintenancelog
 ALTER TABLE `Maintenancelog`
   ADD FOREIGN KEY (`asset_id`)      REFERENCES `Powerasset` (`asset_id`),
-  ADD FOREIGN KEY (`technician_id`) REFERENCES `Employees` (`id_num`);
+  ADD FOREIGN KEY (`technician_id`) REFERENCES `Employees` (`id_num`),
+  ADD FOREIGN KEY (`assigned_by`)   REFERENCES `Employees` (`id_num`),
+  ADD FOREIGN KEY (`approved_by`)   REFERENCES `Employees` (`id_num`);
+
+--Photos
+ALTER TABLE `Photos`
+  ADD FOREIGN KEY (`inspec_id`) REFERENCES `Inspectionlog` (`inspec_id`),
+  ADD FOREIGN KEY (`maint_id`) REFERENCES `Maintenancelog` (`maint_id`),
+  ADD FOREIGN KEY (`asset_id`) REFERENCES `Powerasset` (`asset_id`),
+  ADD FOREIGN KEY (`uploaded_by`) REFERENCES `Employees` (`id_num`);
 
 -- Maintenanceparts
 ALTER TABLE `Maintenanceparts`
@@ -186,3 +259,19 @@ ALTER TABLE `Partsrequest`
 ALTER TABLE `Req_part`
   ADD FOREIGN KEY (`request_id`) REFERENCES `Partsrequest` (`request_id`),
   ADD FOREIGN KEY (`part_id`)    REFERENCES `Partspecs`    (`part_id`);
+
+-- Notification
+ALTER TABLE `Notification`
+  ADD FOREIGN KEY (`receiver_id`) REFERENCES `Employees` (`id_num`);
+
+-- Auditlog
+ALTER TABLE `Auditlog`
+  ADD FOREIGN KEY (`employee_id`) REFERENCES `Employees` (`id_num`);
+
+-- Importbatch
+ALTER TABLE `Importbatch`
+  ADD FOREIGN KEY (`uploaded_by`) REFERENCES `Employees` (`id_num`);
+
+-- Importerror
+ALTER TABLE `Importerror`
+  ADD FOREIGN KEY (`batch_id`) REFERENCES `Importbatch` (`batch_id`);
