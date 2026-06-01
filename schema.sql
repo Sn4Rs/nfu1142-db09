@@ -32,10 +32,13 @@ CREATE TABLE IF NOT EXISTS `Sector` (
   `country` varchar(50) comment '國家'
 );
 
-CREATE TABLE IF NOT EXISTS `Inspector` (
-  `inspector_id` varchar(10) PRIMARY KEY NOT NULL comment '檢查員ID',
-  `name` varchar(50) comment '檢查員姓名'
-);
+CREATE TABLE IF NOT EXISTS `Employees`{
+  `id_num` varchar(10) PRIMARY KEY NOT NULL comment '員工ID',
+  `fullname` varchar(100) NOT NULL comment '姓名',
+  `role` enum('Inspector', 'Technician','assetmanager','deptmanager') NOT NULL comment '身分組',
+  `userhandle` varchar(50) NOT NULL comment '帳號',
+  `userpwd` varchar(255) NOT NULL comment '密碼'
+}
 
 CREATE TABLE IF NOT EXISTS `Inspectionlog` (
   `log_id` varchar(50) PRIMARY KEY NOT NULL comment '檢查紀錄ID',
@@ -93,10 +96,6 @@ CREATE TABLE IF NOT EXISTS `Req_part` (
   `status` enum('待審', '批准', '拒絕')NOT NULL comment '零件申請狀態'
 );
 
-CREATE TABLE IF NOT EXISTS `Technician` (
-  `technician_id` varchar(10) PRIMARY KEY NOT NULL comment '技術員ID',
-  `technician_name` varchar(50) NOT NULL comment '技術員姓名'
-);
 
 CREATE TABLE IF NOT EXISTS `Maintenanceparts` (
   `part_id` varchar(50) NOT NULL COMMENT '零件ID',
@@ -113,6 +112,7 @@ CREATE TABLE IF NOT EXISTS `Partspecs` (
   `provider` varchar(50) NOT NULL comment '供應商'
 );
 
+
 -- =========================
 -- Indexes
 -- =========================
@@ -122,6 +122,10 @@ CREATE INDEX IF NOT EXISTS `idx_powerasset_spec`       ON `Powerasset`      (`sp
 
 -- Health
 CREATE INDEX IF NOT EXISTS `idx_health_status_level`   ON `Health`          (`current_status`, `health_level`);
+
+-- Employees
+CREATE INDEX IF NOT EXISTS `idx_employees_userhandle`      ON `Employees`       (`userhandle`,'userpwd');
+CREATE INDEX IF NOT EXISTS `idx_employees_role`            ON `Employees`       (`role`);
 
 -- Inspectionlog
 CREATE INDEX IF NOT EXISTS `idx_insplog_inspector`     ON `Inspectionlog`   (`inspector_id`);
@@ -161,12 +165,12 @@ ALTER TABLE `Health`
 -- Inspectionlog
 ALTER TABLE `Inspectionlog`
   ADD FOREIGN KEY (`asset_id`)     REFERENCES `Powerasset` (`asset_id`),
-  ADD FOREIGN KEY (`inspector_id`) REFERENCES `Inspector`  (`inspector_id`);
+  ADD FOREIGN KEY (`inspector_id`) REFERENCES `Employees`  (`id_num`);
 
 -- Maintenancelog
 ALTER TABLE `Maintenancelog`
   ADD FOREIGN KEY (`asset_id`)      REFERENCES `Powerasset` (`asset_id`),
-  ADD FOREIGN KEY (`technician_id`) REFERENCES `Technician` (`technician_id`);
+  ADD FOREIGN KEY (`technician_id`) REFERENCES `Employees` (`id_num`);
 
 -- Maintenanceparts
 ALTER TABLE `Maintenanceparts`
@@ -176,7 +180,7 @@ ALTER TABLE `Maintenanceparts`
 -- Partsrequest
 ALTER TABLE `Partsrequest`
   ADD FOREIGN KEY (`maint_id`)      REFERENCES `Maintenancelog` (`maint_id`),
-  ADD FOREIGN KEY (`technician_id`) REFERENCES `Technician`     (`technician_id`);
+  ADD FOREIGN KEY (`technician_id`) REFERENCES `Employees`     (`id_num`);
 
 -- Req_part
 ALTER TABLE `Req_part`
