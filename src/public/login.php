@@ -60,11 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$_SESSION['employee_role'] = $employee['role'];
 				$_SESSION['employee_account'] = $employee['account'];
 
+                // Redirect based on role
 				if (stripos((string) $employee['role'], 'inspector') !== false) {
 					header('Location: inspections.php');
-				} else {
-					header('Location: index.php');
+				} 
+                else if (stripos((string) $employee['role'], 'technician') !== false) {
+					header('Location: maintenance.php');
 				}
+                else 
+                {
+                    header('Location: index.php');
+                }
 				exit;
 			}
 

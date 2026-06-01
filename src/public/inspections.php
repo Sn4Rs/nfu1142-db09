@@ -114,10 +114,10 @@ $todayInspections = [];
 
     <div class="sidebar">
         <h3>導覽列</h3>
-        <a href="index.php">首頁</a>
+        <a href="inspections.php">首頁</a>
         <a href="assets.php">資產總表</a>
         <a href=#>饋線區</a>
-        <a href="inspections.php">巡檢紀錄</a>
+        <a href="inspec-history.php">巡檢紀錄</a>
         <a href=#>巡檢排程</a>
     </div>
 
@@ -163,15 +163,21 @@ $todayInspections = [];
                     <thead>
                         <tr>
                             <th>項目</th>
-                            <th>填報</th>
-                            <th>檢視</th>
+                            <th>狀態</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($todayInspections as $index => $log): ?>
+                            <?php $isNewSubmission = date('Y-m-d', strtotime($log['inspec_time'])) === date('Y-m-d'); ?>
                             <tr>
                                 <td>項目<?= $index + 1 ?> · <?= htmlspecialchars($log['asset_id']) ?></td>
-                                <td class="action-links"><a href="#">填報</a></td>
+                                    <td class="action-links">
+                                        <?php if ($isNewSubmission): ?>
+                                            <span>已填報</span>
+                                        <?php else: ?>
+                                            <a href="new-inspec.php?asset_id=<?= urlencode($log['asset_id']) ?>">填報</a>
+                                        <?php endif; ?>
+                                    </td>
                                 <td class="action-links"><a href="inspec-details.php?id=<?= urlencode($log['inspec_id']) ?>">檢視</a></td>
                             </tr>
                         <?php endforeach; ?>
@@ -180,8 +186,8 @@ $todayInspections = [];
             <?php else: ?>
                 <p>今日尚無巡檢工作。</p>
             <?php endif; ?>
-
-            <p style="text-align: center; margin-top: 20px;"><a href="inspections.php">更多</a></p>
+            
+            <p style="text-align: center; margin-top: 20px;"><a href="new-inspec.php">新增巡檢紀錄</a></p>
         </section>
     </div>
 </body>
