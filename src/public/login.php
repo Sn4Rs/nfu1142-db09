@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					header('Location: inspections.php');
 				} 
                 else if (stripos((string) $employee['role'], 'technician') !== false) {
-					header('Location: maintenance.php');
+					header('Location: maintenances.php');
 				}
                 else 
                 {

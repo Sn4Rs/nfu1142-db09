@@ -80,22 +80,26 @@ CREATE TABLE IF NOT EXISTS `Manufacturer` (
   `country` varchar(50) comment '註冊國家'
 );
 
-CREATE TABLE IF NOT EXISTS `Maintenancelog` (
-  `maint_id` varchar(50) PRIMARY KEY NOT NULL comment '維修紀錄ID',
-  `technician_id` varchar(10) NOT NULL comment '技術員ID',
-  `asset_id` varchar(10) NOT NULL comment '資產ID',
-  `action` text comment '維修動作',
-  `details` text comment '維修細節',
-  `maint_time` datetime comment '維修時間',
-  `status` enum('待處理','處理中','缺件','已完成','已簽核') NOT NULL comment '維修狀態',
-  `scheduled_time` datetime comment '排定維修時間',
-  `assigned_by` varchar(10) comment '指派人員',
-  `approved_by` varchar(10) comment '簽核主管',
-  `approved_at` datetime comment '簽核時間',
-  `work_hours` decimal(5,2) comment '維修工時',
-  `labor_cost` decimal(10,2) comment '工時費用',
-  `material_cost` decimal(10,2) comment '材料費用',
-  `total_cost` decimal(10,2) comment '總費用'
+CREATE TABLE Maintenancelog (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `maint_id` VARCHAR(50) NULL DEFAULT NULL,
+  `technician_id` VARCHAR(10) NOT NULL,
+  `asset_id` VARCHAR(10) NOT NULL,
+  `action` TEXT,
+  `details` TEXT,
+  `maint_time` DATETIME,
+  `status` ENUM('待處理','處理中','缺件','完成','已簽核') NOT NULL,
+  `scheduled_time` DATETIME,
+  `assigned_by` VARCHAR(10),
+  `approved_by` VARCHAR(10),
+  `approved_at` DATETIME,
+  `work_hours` DECIMAL(5,2),
+  `labor_cost` DECIMAL(10,2),
+  `material_cost` DECIMAL(10,2),
+  `total_cost` DECIMAL(10,2),
+
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_maint_id (maint_id)
 );
 
 CREATE TABLE IF NOT EXISTS `Partsrequest` (
@@ -184,7 +188,7 @@ CREATE INDEX IF NOT EXISTS `idx_powerasset_spec`       ON `Powerasset`      (`sp
 CREATE INDEX IF NOT EXISTS `idx_health_status_level`   ON `Health`          (`current_status`, `health_level`);
 
 -- Employees
-CREATE INDEX IF NOT EXISTS `idx_employees_account`      ON `Employees`       (`account`,`userpwd`);
+CREATE INDEX IF NOT EXISTS `idx_employees_account`      ON `Employees`       (`account`);
 CREATE INDEX IF NOT EXISTS `idx_employees_role`            ON `Employees`       (`role`);
 
 -- Inspectionlog
@@ -253,7 +257,8 @@ ALTER TABLE `Maintenanceparts`
 -- Partsrequest
 ALTER TABLE `Partsrequest`
   ADD FOREIGN KEY (`maint_id`)      REFERENCES `Maintenancelog` (`maint_id`),
-  ADD FOREIGN KEY (`technician_id`) REFERENCES `Employees`     (`id_num`);
+  ADD FOREIGN KEY (`technician_id`) REFERENCES `Employees`     (`id_num`),
+  ADD FOREIGN KEY (`approved_by`) REFERENCES `Employees`     (`id_num`);
 
 -- Req_part
 ALTER TABLE `Req_part`
