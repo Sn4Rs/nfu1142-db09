@@ -15,10 +15,6 @@ if (empty($_SESSION['employee_id'])) {
     exit;
 }
 
-$flashMessage = $_SESSION['flash_message'] ?? '';
-$flashType = $_SESSION['flash_type'] ?? 'success';
-unset($_SESSION['flash_message'], $_SESSION['flash_type']);
-
 $employeeId = $_SESSION['employee_id'];
 $employeeRole = $_SESSION['employee_role'] ?? '';
 $isTechnician = stripos($employeeRole, 'technician') !== false;
@@ -34,6 +30,13 @@ $details = '';
 $scheduledTime = '';
 $status = '完成';  // 定義其他必要的變數
 $maintId = '';  # $partIds 已經處理了
+
+function convertDateTimeLocal(?string $value): ?string {
+    if (!$value) return null;
+
+    // HTML datetime-local => MySQL datetime
+    return date('Y-m-d H:i:s', strtotime($value));
+}
 
 // ----------------------------
 // DB Connection (isolated + correct error handling)
@@ -158,39 +161,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
 
         try {
+            if (empty($_POST['maint_time'])) {
+                throw new Exception("請填寫維護時間");
+            }
+            $scheduledTime = $_POST['scheduled_time'] ?? null;
+            $maintTime = $_POST['maint_time'] ?? null;
+
+            $scheduledTime = convertDateTimeLocal($scheduledTime);
+            $maintTime = convertDateTimeLocal($maintTime);
 
             $pdo->beginTransaction();
 
-            $isEdit = !empty($recordId);
-            $maintTime = date('Y-m-d H:i:s');
+                $isEdit = !empty($recordId);
 
-            if ($isEdit) {
 
-                // UPDATE
-                $maintId = $recordId;
+                if ($isEdit) {
 
-                $pdo->prepare(
-                    'UPDATE Maintenancelog
-                    SET technician_id = ?,
-                        asset_id = ?,
-                        action = ?,
-                        details = ?,
-                        scheduled_time = ?,
-                        status = ?,
-                        assigned_by = ?
-                    WHERE maint_id = ?'
-                )->execute([
-                    $employeeId,
-                    $selectedAssetId,
-                    $action,
-                    $details,
-                    $scheduledTime,
-                    $status,
-                    $employeeId,
-                    $maintId
-                ]);
+                    $maintId = $recordId;
 
-            } else {
+                    $pdo->prepare(
+                        'UPDATE Maintenancelog
+                        SET technician_id = ?,
+                            asset_id = ?,
+                            action = ?,
+                            details = ?,
+                            scheduled_time = ?,
+                            maint_time = ?,
+                            status = ?,
+                            assigned_by = ?
+                        WHERE maint_id = ?'
+                    )->execute([
+                        $employeeId,
+                        $selectedAssetId,
+                        $action,
+                        $details,
+                        $scheduledTime,
+                        $maintTime,
+                        $status,
+                        $employeeId,
+                        $maintId
+                    ]);
+
+                } else {
 
                 // INSERT
                 $maintId = 'MT' . date('YmdHis') . random_int(100, 999);
@@ -451,6 +463,9 @@ exit;
                 <div class="form-row"> <label for="scheduled_time">排定時間</label> <input type="datetime-local"
                         id="scheduled_time" name="scheduled_time" value="<?= htmlspecialchars($scheduledTime) ?>"
                         required> </div>
+                <div class="form-row"> <label for="maint_time">維護時間</label> <input type="datetime-local"
+                        id="maint_time" name="maint_time" value="<?= htmlspecialchars($maintTime) ?>"
+                        required> </div>
                 <div class="form-row"> <label for="status">狀態</label> <select id="status" name="status" required>
                         <option value="完成" <?=$status==='完成' ? 'selected' : '' ?>> 完成 </option>
                         <option value="缺件" <?=$status==='缺件' ? 'selected' : '' ?>> 缺件 </option>
@@ -524,9 +539,5 @@ exit;
         });
     </script>
 </body>
-    <?php if ($flashMessage): ?>
-        <div class="flash <?= htmlspecialchars($flashType) ?>">
-            <?= htmlspecialchars($flashMessage) ?>
-        </div>
-    <?php endif; ?>
+    
 </html>

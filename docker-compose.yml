@@ -12,7 +12,7 @@ services:
     networks:
       - stock-network
     environment:
-      - APACHE_DOCUMENT_ROOT=/var/www/html/src/public
+      - APACHE_DOCUMENT_ROOT=/var/www/html
 
   # 2. MariaDB 資料庫
   db-db:
@@ -28,6 +28,8 @@ services:
       - "3306:3306"
     volumes:
       - ./db_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     networks:
       - stock-network
 

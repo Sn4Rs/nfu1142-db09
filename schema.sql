@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS `Manufacturer` (
   `country` varchar(50) comment '註冊國家'
 );
 
-CREATE TABLE Maintenancelog (
+CREATE TABLE IF NOT EXISTS `Maintenancelog` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `maint_id` VARCHAR(50) NULL DEFAULT NULL,
   `technician_id` VARCHAR(10) NOT NULL,
@@ -242,7 +242,7 @@ ALTER TABLE `Maintenancelog`
   ADD FOREIGN KEY (`assigned_by`)   REFERENCES `Employees` (`id_num`),
   ADD FOREIGN KEY (`approved_by`)   REFERENCES `Employees` (`id_num`);
 
---Photos
+-- Photos
 ALTER TABLE `Photos`
   ADD FOREIGN KEY (`inspec_id`) REFERENCES `Inspectionlog` (`inspec_id`),
   ADD FOREIGN KEY (`maint_id`) REFERENCES `Maintenancelog` (`maint_id`),

@@ -246,12 +246,13 @@ try {
 <body>
     <div class="sidebar">
         <h3>導覽列</h3>
+        <a href="maintenances.php">首頁</a>
         <a href="assets.php">資產清單</a>
         <a href="index.php#powerasset-search">饋線區</a>
         <a href="maint-history.php">維修紀錄</a>
         <a href="maint-todo.php">維修工作</a>
         <a href="parts-request.php">零件申請</a>
-        <a href="schedule-maint.php">安排維修</a>
+        <a href="schedule-maint.php">維修排程</a>
     </div>
 
     <div class="main">

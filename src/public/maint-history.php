@@ -43,6 +43,7 @@ $stmt = $pdo->query("
         ml.maint_id,
         ml.asset_id,
         ml.maint_time,
+        ml.scheduled_time,
         ml.status,
         ml.action,
         ml.details,
@@ -91,12 +92,20 @@ if ($selectedRecordId) {
 $groupedRecords = [];
 
 foreach ($records as $r) {
-    if (empty($r['maint_time'])) continue;
 
-    $monthKey = date('Y-m', strtotime($r['maint_time']));
+    $ts = !empty($r['maint_time']) ? strtotime($r['maint_time']) : false;
+
+    if (!$ts) {
+        $groupedRecords['未執行工作'][] = $r;
+        continue;
+    }
+
+    $monthKey = date('Y-m', $ts);
     $groupedRecords[$monthKey][] = $r;
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 
@@ -358,16 +367,23 @@ foreach ($records as $r) {
             <?php foreach ($groupedRecords as $monthKey => $monthRecords): ?>
             <section class="month-group">
                 <h2 class="month-label">
-                    <?= htmlspecialchars(date('Y年 n月', strtotime($monthKey . '-01'))) ?>
+                    <?= $monthKey === '未執行工作'
+                        ? '未執行工作'
+                        : htmlspecialchars(str_replace('-', '年 ', $monthKey) . '月') ?>
                 </h2>
                 <?php foreach ($monthRecords as $record): ?>
                 <div class="record-item">
                     <a class="record-title" href="?record_id=<?= urlencode($record['maint_id']) ?>">
                         <?= htmlspecialchars($record['maint_id']) ?>
                     </a>
-                    <div class="record-meta">
-                        <?= htmlspecialchars(date('n/j', strtotime($record['maint_time']))) ?>
-                    </div>
+                    <a class="record-title" href="?record_id=<?= urlencode($record['action']) ?>">
+                        <?= htmlspecialchars($record['action']) ?>
+                    </a>
+                    <a class="record-meta">
+                        <?= !empty($selectedRecord['maint_time'])
+                        ? date('n/j', strtotime($selectedRecord['maint_time']))
+                        : '未設定工作日期' ?>
+                    </a>
                     <div class="record-links">
                         <a href="?record_id=<?= urlencode($record['maint_id']) ?>">右側詳情</a>
                     </div>
@@ -393,8 +409,12 @@ foreach ($records as $r) {
             <div class="detail-card">
 
                 <div class="detail-row">
-                    <span class="detail-label">日期</span>
+                    <span class="detail-label">維護日期</span>
                     <?= htmlspecialchars($selectedRecord['maint_time'] ?? '') ?>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">排定日期</span>
+                    <?= htmlspecialchars($selectedRecord['scheduled_time'] ?? '') ?>
                 </div>
 
                 <div class="detail-row">
