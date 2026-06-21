@@ -287,7 +287,7 @@ if ($selectedRecord !== null) {
             <a href="inspections.php">首頁</a>
             <a href="assets.php">資產總表</a>
             <a href="inspec-history.php">巡檢紀錄</a>
-            <a ref=#>巡檢排程</a>
+            <a href="new-inspec.php">巡檢排程</a>
         </aside>
 
         <main class="history-main">
@@ -297,7 +297,7 @@ if ($selectedRecord !== null) {
                     <?php if (!empty($_SESSION['employee_id'])): ?>
                         <div><?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?></div>
                         <div><?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?></div>
-                        <div><a href="login.php">切換帳號</a></div>
+                        <div><a href="logout.php">切換帳號</a></div>
                     <?php else: ?>
                         <a href="login.php">登入</a>
                     <?php endif; ?>

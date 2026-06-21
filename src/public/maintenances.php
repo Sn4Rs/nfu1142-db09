@@ -269,7 +269,7 @@ try {
                 <?php if (!empty($_SESSION['employee_id'])): ?>
                     <div><?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?></div>
                     <div><?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?></div>
-                    <div><a href="login.php">切換帳號</a></div>
+                    <div><a href="logout.php">切換帳號</a></div>
                 <?php else: ?>
                     <a href="login.php">登入</a>
                 <?php endif; ?>

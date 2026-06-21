@@ -315,7 +315,7 @@ $techniciansById[$technician['id_num']] = $technician;
                 <div>
                     <?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?>
                 </div>
-                <div><a href="login.php">切換帳號</a></div>
+                <div><a href="logout.php">切換帳號</a></div>
             </div>
         </div>
         <?php if ($message !== ''): ?>

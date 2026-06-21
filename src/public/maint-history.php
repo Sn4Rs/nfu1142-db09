@@ -357,7 +357,7 @@ foreach ($records as $r) {
                     <div>
                         <?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?>
                     </div>
-                    <div><a href="login.php">切換帳號</a></div>
+                    <div><a href="logout.php">切換帳號</a></div>
                     <?php else: ?>
                     <a href="login.php">登入</a>
                     <?php endif; ?>
@@ -376,13 +376,16 @@ foreach ($records as $r) {
                     <a class="record-title" href="?record_id=<?= urlencode($record['maint_id']) ?>">
                         <?= htmlspecialchars($record['maint_id']) ?>
                     </a>
-                    <a class="record-title" href="?record_id=<?= urlencode($record['action']) ?>">
+                    <a class="record-title" href="?record_action=<?= urlencode($record['action']) ?>">
                         <?= htmlspecialchars($record['action']) ?>
                     </a>
                     <a class="record-meta">
-                        <?= !empty($selectedRecord['maint_time'])
-                        ? date('n/j', strtotime($selectedRecord['maint_time']))
-                        : '未設定工作日期' ?>
+                        <?php
+                        $time = $record['maint_time'] ?? null;
+                        $ts = $time ? strtotime($time) : false;
+
+                        echo $ts ? date('n/j', $ts) : '未設定工作日期';
+                        ?>
                     </a>
                     <div class="record-links">
                         <a href="?record_id=<?= urlencode($record['maint_id']) ?>">右側詳情</a>

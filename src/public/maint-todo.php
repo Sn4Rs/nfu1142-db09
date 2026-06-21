@@ -123,7 +123,7 @@ try {
                 <?php if (!empty($_SESSION['employee_id'])): ?>
                     <div><?= htmlspecialchars($employeeName) ?></div>
                     <div><?= htmlspecialchars($employeeRole) ?></div>
-                    <div><a href="login.php">切換帳號</a></div>
+                    <div><a href="logout.php">切換帳號</a></div>
                 <?php else: ?>
                     <a href="login.php">登入</a>
                 <?php endif; ?>

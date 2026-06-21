@@ -112,14 +112,13 @@ $todayInspections = [];
     }
     ?>
 
-    <div class="sidebar">
-        <h3>導覽列</h3>
-        <a href="inspections.php">首頁</a>
-        <a href="assets.php">資產總表</a>
-        <a href=#>饋線區</a>
-        <a href="inspec-history.php">巡檢紀錄</a>
-        <a href=#>巡檢排程</a>
-    </div>
+        <aside class="sidebar">
+            <h3>導覽列</h3>
+            <a href="inspections.php">首頁</a>
+            <a href="assets.php">資產總表</a>
+            <a href="inspec-history.php">巡檢紀錄</a>
+            <a href="new-inspec.php">巡檢排程</a>
+        </aside>
 
     <div class="main">
         <div class="headerflex">
@@ -128,7 +127,7 @@ $todayInspections = [];
                 <?php if (!empty($_SESSION['employee_id'])): ?>
                     <div><?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?></div>
                     <div><?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?></div>
-                    <div><a href="login.php">切換帳號</a></div>
+                    <div><a href="logout.php">切換帳號</a></div>
                 <?php else: ?>
                     <a href="login.php">登入</a>
                 <?php endif; ?>
