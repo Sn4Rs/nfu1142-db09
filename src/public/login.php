@@ -18,8 +18,12 @@ if (!empty($_SESSION['employee_id'])) {
 		header('Location: inspections.php');
 		exit;
 	}
+	else if (stripos((string) ($_SESSION['employee_role'] ?? ''), 'technician') !== false) {
+		header('Location: inspections.php');
+		exit;
+	}
 
-	header('Location: index.php');
+	else header('Location: index.php');
 	exit;
 }
 

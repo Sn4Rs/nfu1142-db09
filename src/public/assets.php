@@ -19,9 +19,8 @@ $dotenv->load();
 
     <div class="sidebar">
         <h3>清單</h3>
+        <a href="index.php">首頁</a>
         <a href="assets.php">資產總表</a>
-        <a href="inspections.php">檢查紀錄表</a>
-        <a href="index.php">待修清單</a>
     </div>
 
     <div class="main">
@@ -33,9 +32,13 @@ $dotenv->load();
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // Base SQL,ST_AsText is a spatial function to convert the GPS coordinates to text format
-            $sql = "SELECT pa.*, ST_AsText(pa.gps) as gps_coord, 
-                           CONCAT(s.city, ' ', s.street, ' (', s.feeder_area, ')') as full_address,
-                           CONCAT(m.name, ' - ', asp.model, '\n電壓: ', asp.voltage, 'V / 容量: ', asp.capacity) as spec_detail
+            $sql = "SELECT pa.*,
+                        ST_AsText(pa.gps) as gps_coord,
+                        CONCAT(s.city, ' ', s.street, ' (', s.feeder_area, ')') as full_address,
+                        CONCAT(
+                            m.name, ' - ', asp.model,
+                            '\n電壓: ', asp.voltage, 'V / 電流: ', asp.amperage, 'A'
+                        ) as spec_detail
                     FROM PowerAsset pa
                     LEFT JOIN Sector s ON pa.sector_id = s.sector_id
                     LEFT JOIN AssetSpec asp ON pa.spec_id = asp.spec_id

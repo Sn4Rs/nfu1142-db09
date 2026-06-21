@@ -13,8 +13,28 @@ use Dotenv\Dotenv;
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+if (!empty($_SESSION['employee_id'])) {
+
+    $role = strtolower($_SESSION['employee_role'] ?? '');
+
+    if (str_contains($role, 'inspector')) {
+        header('Location: inspections.php');
+        exit;
+    }
+
+    if (str_contains($role, 'technician')) {
+        header('Location: maintenances.php');
+        exit;
+    }
+
+    // default logged-in homepage
+    header('Location: login.php');
+    exit;
 }
 
 $searchTerm = trim($_GET['q'] ?? '');
@@ -37,7 +57,6 @@ $powerassetMatches = [];
         <h3>導覽列</h3>
         <a href="index.php">首頁</a>
         <a href="assets.php">資產總表</a>
-        <a href="inspections.php">檢查紀錄表</a>
     </div>
 
     <div class="main">
