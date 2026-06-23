@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
 
@@ -32,7 +32,7 @@ $parts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>零件總表</title>
+    <title>?嗡辣蝮質”</title>
     <link rel="stylesheet" href="../css/style.css">
     <style>
         table {width:100%;border-collapse:collapse;}
@@ -42,17 +42,17 @@ $parts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <div class="sidebar">
-        <h3>導覽列</h3>
-        <a href="../maintenances.php">首頁</a>
-        <a href="../assets.php">資產清單</a>
-        <a href="../index.php#powerasset-search">饋線區</a>
-        <a href="../maint-history.php">維修紀錄</a>
-        <a href="../maint-todo.php">維修工作</a>
-        <a href="../parts-request.php">零件申請</a>
-        <a href="../schedule-maint.php">維修排程</a>
+        <h3>撠汗??/h3>
+        <a href="../maintenances.php">擐?</a>
+        <a href="../assets.php">鞈皜</a>
+        <a href="../index.php#powerasset-search">擖??</a>
+        <a href="../maint-history.php">蝬凋耨蝝??/a>
+        <a href="../maint-todo.php">蝬凋耨撌乩?</a>
+        <a href="../parts-request.php">?嗡辣?唾?</a>
+        <a href="../schedule-maint.php">蝬凋耨??</a>
     </div>
     <div class="main">
-        <h1>零件總表</h1>
+        <h1>?嗡辣蝮質”</h1>
         <table>
             <thead>
                 <tr>

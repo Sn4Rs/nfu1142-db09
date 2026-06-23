@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
 
@@ -10,7 +10,7 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
 $employeeId = $_SESSION['employee_id'] ?? '';
-$employeeName = $_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者';
+$employeeName = $_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '雿輻??;
 $employeeRole = $_SESSION['employee_role'] ?? '';
 
 $scheduledWorks = [];
@@ -38,7 +38,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>維修排程 - 路邊電力資產管理系統</title>
+    <title>蝬凋耨?? - 頝舫??餃?鞈蝞∠?蝟餌絞</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .main {
@@ -106,60 +106,61 @@ try {
 </head>
 <body>
     <div class="sidebar">
-        <h3>導覽列</h3>
-        <a href="maintenances.php">首頁</a>
-        <a href="assets.php">資產清單</a>
-        <a href="index.php#powerasset-search">饋線區</a>
-        <a href="maint-history.php">維修紀錄</a>
-        <a href="maint-todo.php">維修工作</a>
-        <a href="parts-request.php">零件申請</a>
-        <a href="schedule-maint.php">維修排程</a>
+        <h3>撠汗??/h3>
+        <a href="maintenances.php">擐?</a>
+        <a href="assets.php">鞈皜</a>
+        <a href="index.php#powerasset-search">擖??</a>
+        <a href="maint-history.php">蝬凋耨蝝??/a>
+        <a href="maint-todo.php">蝬凋耨撌乩?</a>
+        <a href="parts-request.php">?嗡辣?唾?</a>
+        <a href="schedule-maint.php">蝬凋耨??</a>
     </div>
 
     <div class="main">
         <div class="headerflex">
-            <h1>維修工作</h1>
+            <h1>蝬凋耨撌乩?</h1>
             <div class="session-box">
                 <?php if (!empty($_SESSION['employee_id'])): ?>
                     <div><?= htmlspecialchars($employeeName) ?></div>
                     <div><?= htmlspecialchars($employeeRole) ?></div>
-                    <div><a href="logout.php">切換帳號</a></div>
+                    <div><a href="logout.php">??撣唾?</a></div>
                 <?php else: ?>
-                    <a href="login.php">登入</a>
+                    <a href="login.php">?餃</a>
                 <?php endif; ?>
             </div>
         </div>
 
         <section class="section-card">
-            <h2>今日排程</h2>
+            <h2>隞??</h2>
             <?php if (count($scheduledWorks) > 0): ?>
                 <table class="work-table">
                     <thead>
                         <tr>
-                            <th>項目</th>
-                            <th>安排時間</th>
-                            <th>狀態</th>
-                            <th>操作</th>
+                            <th>?</th>
+                            <th>摰???</th>
+                            <th>???/th>
+                            <th>??</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($scheduledWorks as $index => $work): ?>
                             <tr>
-                                <td>項目<?= $index + 1 ?> · <?= htmlspecialchars($work['maint_id']) ?></td>
+                                <td>?<?= $index + 1 ?> 繚 <?= htmlspecialchars($work['maint_id']) ?></td>
                                 <td><?= htmlspecialchars($work['scheduled_time']) ?></td>
                                 <td><span class="status-badge"><?= htmlspecialchars($work['status']) ?></span></td>
                                 <td class="action-links">
-                                    <a href="maint-history.php?record_id=<?= urlencode($work['maint_id']) ?>">查看詳情</a>
-                                    <a href="schedule-maint.php?asset_id=<?= urlencode($work['asset_id']) ?>">編輯排程</a>
+                                    <a href="maint-history.php?record_id=<?= urlencode($work['maint_id']) ?>">?亦?閰單?</a>
+                                    <a href="schedule-maint.php?asset_id=<?= urlencode($work['asset_id']) ?>">蝺刻摩??</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             <?php else: ?>
-                <p>今日尚無維修排程。</p>
+                <p>隞撠蝬凋耨????/p>
             <?php endif; ?>
         </section>
     </div>
 </body>
 </html>
+
