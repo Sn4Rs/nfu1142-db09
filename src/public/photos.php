@@ -1,258 +1,426 @@
 <?php
-declare(strict_types=1);
 
-require_once __DIR__ . '/includes/layout.php';
-require_once __DIR__ . '/includes/audit.php';
-require_roles(['主管', '資產管理員', '巡檢員']);
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-$pdo = db();
-$user = current_user();
+use Dotenv\Dotenv;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf();
-    $action = (string)($_POST['action'] ?? '');
-
-    if ($action === 'upload') {
-        $logId = trim((string)($_POST['log_id'] ?? ''));
-        $caption = trim((string)($_POST['caption'] ?? ''));
-
-        $logStmt = $pdo->prepare('SELECT log_id, asset_id FROM InspectionLog WHERE log_id = :log_id');
-        $logStmt->execute(['log_id' => $logId]);
-        $log = $logStmt->fetch();
-
-        if (!$log) {
-            flash('danger', '找不到指定的巡檢紀錄。');
-            header('Location: /photos.php');
-            exit;
-        }
-
-        if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
-            flash('danger', '請選擇照片檔案。');
-            header('Location: /photos.php?asset_id=' . urlencode($log['asset_id']));
-            exit;
-        }
-
-        $file = $_FILES['photo'];
-        if ((int)$file['size'] > 5 * 1024 * 1024) {
-            flash('danger', '照片不得超過 5MB。');
-            header('Location: /photos.php?asset_id=' . urlencode($log['asset_id']));
-            exit;
-        }
-
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file((string)$file['tmp_name']);
-        $extensions = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-        ];
-
-        if (!isset($extensions[$mime])) {
-            flash('danger', '只接受 JPG、PNG 或 WEBP 圖片。');
-            header('Location: /photos.php?asset_id=' . urlencode($log['asset_id']));
-            exit;
-        }
-
-        $uploadDir = __DIR__ . '/uploads/inspection';
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
-            throw new RuntimeException('無法建立照片資料夾。');
-        }
-
-        $filename = sprintf(
-            '%s-%s.%s',
-            preg_replace('/[^A-Za-z0-9_-]/', '', $logId),
-            bin2hex(random_bytes(8)),
-            $extensions[$mime]
-        );
-        $target = $uploadDir . '/' . $filename;
-
-        if (!move_uploaded_file((string)$file['tmp_name'], $target)) {
-            flash('danger', '照片儲存失敗，請檢查 uploads 資料夾權限。');
-            header('Location: /photos.php?asset_id=' . urlencode($log['asset_id']));
-            exit;
-        }
-
-        $stmt = $pdo->prepare(
-            'INSERT INTO Photos
-            (log_id, asset_id, uploaded_by, file_name, mime_type, file_size, url, caption)
-            VALUES
-            (:log_id, :asset_id, :uploaded_by, :file_name, :mime_type, :file_size, :url, :caption)'
-        );
-        $stmt->execute([
-            'log_id' => $logId,
-            'asset_id' => $log['asset_id'],
-            'uploaded_by' => $user['id_num'],
-            'file_name' => basename((string)$file['name']),
-            'mime_type' => $mime,
-            'file_size' => (int)$file['size'],
-            'url' => '/uploads/inspection/' . $filename,
-            'caption' => $caption !== '' ? $caption : null,
-        ]);
-
-        $photoId = (string)$pdo->lastInsertId();
-        write_audit('新增巡檢照片', 'Photos', $photoId, null, [
-            'log_id' => $logId,
-            'asset_id' => $log['asset_id'],
-            'url' => '/uploads/inspection/' . $filename,
-        ]);
-        flash('success', '照片已上傳並綁定巡檢紀錄。');
-        header('Location: /photos.php?asset_id=' . urlencode($log['asset_id']));
-        exit;
-    }
-
-    if ($action === 'delete') {
-        if (!in_array($user['role'], ['主管', '資產管理員'], true)) {
-            http_response_code(403);
-            exit('只有主管或資產管理員可刪除附件。');
-        }
-
-        $photoId = (int)($_POST['photo_id'] ?? 0);
-        $stmt = $pdo->prepare('SELECT * FROM Photos WHERE photo_id = :photo_id');
-        $stmt->execute(['photo_id' => $photoId]);
-        $photo = $stmt->fetch();
-
-        if ($photo) {
-            $pdo->prepare('DELETE FROM Photos WHERE photo_id = :photo_id')->execute(['photo_id' => $photoId]);
-            $path = __DIR__ . $photo['url'];
-            if (is_file($path)) {
-                @unlink($path);
-            }
-            write_audit('刪除巡檢照片', 'Photos', (string)$photoId, $photo, null);
-            flash('success', '照片已刪除。');
-        }
-
-        header('Location: /photos.php?' . query_string(['photo_id' => null]));
-        exit;
-    }
+if (session_status() === PHP_SESSION_NONE) {
+	session_start();
 }
 
-$assetId = trim((string)($_GET['asset_id'] ?? ''));
-$dateFrom = trim((string)($_GET['date_from'] ?? ''));
-$dateTo = trim((string)($_GET['date_to'] ?? ''));
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv->load();
 
-$sql = '
-SELECT p.*, i.observation, i.risk_score, i.inspec_time, e.name AS uploader_name
-FROM Photos p
-INNER JOIN InspectionLog i ON i.log_id = p.log_id
-LEFT JOIN Employees e ON e.id_num = p.uploaded_by
-WHERE 1=1
-';
-$params = [];
-if ($assetId !== '') {
-    $sql .= ' AND p.asset_id LIKE :asset_id';
-    $params['asset_id'] = '%' . $assetId . '%';
+if (empty($_SESSION['employee_id'])) {
+	header('Location: login.php');
+	exit;
 }
-if ($dateFrom !== '') {
-    $sql .= ' AND DATE(i.inspec_time) >= :date_from';
-    $params['date_from'] = $dateFrom;
+
+if (stripos((string) ($_SESSION['employee_role'] ?? ''), 'inspector') === false) {
+	header('Location: inspections.php');
+	exit;
 }
-if ($dateTo !== '') {
-    $sql .= ' AND DATE(i.inspec_time) <= :date_to';
-    $params['date_to'] = $dateTo;
+
+$pdo = null;
+$message = '';
+$messageType = 'success';
+$selectedAssetId = trim($_GET['asset_id'] ?? $_POST['asset_id'] ?? '');
+$selectedAsset = null;
+$assets = [];
+
+try {
+	$dsn = 'mysql:host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_NAME'] . ';port=' . $_ENV['DB_PORT'];
+	$pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
+	$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+	$assetStmt = $pdo->query('SELECT asset_id, sector_id, type, spec_id FROM Powerasset ORDER BY asset_id ASC');
+	$assets = $assetStmt->fetchAll(PDO::FETCH_ASSOC);
+
+	foreach ($assets as $asset) {
+		if ($asset['asset_id'] === $selectedAssetId) {
+			$selectedAsset = $asset;
+			break;
+		}
+	}
+
+	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		$selectedAssetId = trim($_POST['asset_id'] ?? '');
+		$observation = trim($_POST['observation'] ?? '');
+		$riskScore = (int) ($_POST['risk_score'] ?? 0);
+
+		$assetStmt = $pdo->prepare('SELECT asset_id, sector_id, type, spec_id FROM Powerasset WHERE asset_id = ? LIMIT 1');
+		$assetStmt->execute([$selectedAssetId]);
+		$selectedAsset = $assetStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+		if ($selectedAsset === false || $selectedAsset === null) {
+			$message = '請先選擇有效的資產項目。';
+			$messageType = 'error';
+		} elseif ($observation === '') {
+			$message = '請輸入檢查敘述。';
+			$messageType = 'error';
+		} elseif ($riskScore < 0 || $riskScore > 100) {
+			$message = '健康度評定請輸入 0 到 100 的數值。';
+			$messageType = 'error';
+		} else {
+			$pdo->beginTransaction();
+
+			try {
+				$inspecId = 'IN' . date('YmdHis') . random_int(100, 999);
+				$inspecTime = date('Y-m-d H:i:s');
+				$inspectorId = $_SESSION['employee_id'];
+
+				$insertStmt = $pdo->prepare('INSERT INTO Inspectionlog (inspec_id, asset_id, inspector_id, observation, risk_score, inspec_time) VALUES (?, ?, ?, ?, ?, ?)');
+				$insertStmt->execute([$inspecId, $selectedAssetId, $inspectorId, $observation, $riskScore, $inspecTime]);
+
+				$uploadDir = __DIR__ . '/uploads/inspection';
+				if (!is_dir($uploadDir)) {
+					mkdir($uploadDir, 0777, true);
+				}
+
+				$uploadedFiles = [];
+				if (!empty($_FILES['photos']) && isset($_FILES['photos']['name']) && is_array($_FILES['photos']['name'])) {
+					$fileCount = count($_FILES['photos']['name']);
+					for ($index = 0; $index < $fileCount; $index++) {
+						if ($_FILES['photos']['error'][$index] !== UPLOAD_ERR_OK || $_FILES['photos']['name'][$index] === '') {
+							continue;
+						}
+
+						$originalName = basename($_FILES['photos']['name'][$index]);
+						$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+						$safeName = pathinfo($originalName, PATHINFO_FILENAME);
+						$safeName = preg_replace('/[^A-Za-z0-9_\-]+/', '_', $safeName);
+						$storedName = $safeName . '_' . uniqid('', true) . ($extension !== '' ? '.' . $extension : '');
+						$storedPath = $uploadDir . '/' . $storedName;
+
+						if (move_uploaded_file($_FILES['photos']['tmp_name'][$index], $storedPath)) {
+							$photoId = 'PH' . date('YmdHis') . random_int(100, 999) . $index;
+							$relativePath = 'uploads/inspection/' . $storedName;
+
+							$photoStmt = $pdo->prepare('INSERT INTO Photos (photo_id, asset_id, inspec_id, maint_id, url, filename, uploaded_by, uploaded_at, is_deleted) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 0)');
+							$photoStmt->execute([
+								$photoId,
+								$selectedAssetId,
+								$inspecId,
+								$relativePath,
+								$originalName,
+								$_SESSION['employee_id'],
+								$inspecTime,
+							]);
+
+							$uploadedFiles[] = $originalName;
+						}
+					}
+				}
+
+				$pdo->commit();
+				$message = '巡檢紀錄已送出。' . (!empty($uploadedFiles) ? ' 已上傳：' . implode('、', $uploadedFiles) : '');
+				$messageType = 'success';
+				$selectedAssetId = '';
+				$selectedAsset = null;
+			} catch (Throwable $e) {
+				if ($pdo->inTransaction()) {
+					$pdo->rollBack();
+				}
+				$message = '送出失敗，請稍後再試。';
+				$messageType = 'error';
+			}
+		}
+	}
+} catch (PDOException $e) {
+	$message = '資料庫連線失敗。';
+	$messageType = 'error';
 }
-$sql .= ' ORDER BY i.inspec_time DESC, p.photo_id DESC';
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$photos = $stmt->fetchAll();
-
-$logs = $pdo->query(
-    'SELECT i.log_id, i.asset_id, i.inspec_time, LEFT(i.observation, 50) AS observation
-     FROM InspectionLog i
-     ORDER BY i.inspec_time DESC
-     LIMIT 100'
-)->fetchAll();
-
-render_header('巡檢照片與附件管理');
+$assetsById = [];
+foreach ($assets as $asset) {
+	$assetsById[$asset['asset_id']] = $asset;
+}
 ?>
-<div class="grid grid-2">
-    <div class="card">
-        <h2>查詢照片</h2>
-        <form method="get" class="toolbar">
-            <div class="field">
-                <label>資產編號</label>
-                <input name="asset_id" value="<?= e($assetId) ?>" placeholder="ASSET001">
-            </div>
-            <div class="field">
-                <label>起始日期</label>
-                <input type="date" name="date_from" value="<?= e($dateFrom) ?>">
-            </div>
-            <div class="field">
-                <label>結束日期</label>
-                <input type="date" name="date_to" value="<?= e($dateTo) ?>">
-            </div>
-            <button class="btn btn-primary">查詢</button>
-            <a class="btn" href="/photos.php">清除</a>
-        </form>
-    </div>
+<!DOCTYPE html>
+<html lang="zh-Hant">
 
-    <div class="card">
-        <form method="post" enctype="multipart/form-data">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="upload">
-            <div class="form-row">
-                <div class="field" style="min-width:260px;">
-                    <label>巡檢紀錄</label>
-                    <select name="log_id" required>
-                        <option value="">請選擇</option>
-                        <?php foreach ($logs as $log): ?>
-                            <option value="<?= e($log['log_id']) ?>">
-                                <?= e($log['log_id']) ?>／<?= e($log['asset_id']) ?>／<?= e($log['inspec_time']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="field">
-                    <label>照片</label>
-                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
-                </div>
-            </div>
-            <div class="field" style="margin-top:10px;">
-                <label>照片說明</label>
-                <input name="caption" maxlength="255" placeholder="例如：底座鏽蝕特寫">
-            </div>
-            <button class="btn btn-success" type="submit" style="margin-top:12px;">上傳照片</button>
-        </form>
-    </div>
-</div>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>巡檢紀錄回報 - 路邊電力資產管理系統</title>
+	<link rel="stylesheet" href="css/style.css">
+	<style>
+		.headerflex {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+			margin-bottom: 16px;
+		}
 
-<div class="card" style="margin-top:18px;">
-    <div class="card-header">
-        <h2>照片縮圖列表</h2>
-        <span class="muted">共 <?= number_format(count($photos)) ?> 張</span>
-    </div>
-    <?php if (!$photos): ?>
-        <div class="empty">沒有符合條件的照片。</div>
-    <?php else: ?>
-        <div class="photo-grid">
-            <?php foreach ($photos as $photo): ?>
-                <article class="photo-card">
-                    <a href="<?= e($photo['url']) ?>" target="_blank" rel="noopener">
-                        <img src="<?= e($photo['url']) ?>" alt="<?= e($photo['caption'] ?? $photo['file_name']) ?>">
-                    </a>
-                    <div class="photo-body">
-                        <h4><?= e($photo['asset_id']) ?>／<?= e($photo['log_id']) ?></h4>
-                        <div class="small muted"><?= e($photo['inspec_time']) ?></div>
-                        <p><?= e($photo['caption'] ?? $photo['observation'] ?? '無說明') ?></p>
-                        <div class="small muted">
-                            上傳者：<?= e($photo['uploader_name'] ?? '-') ?><br>
-                            <?= e($photo['mime_type']) ?>／<?= number_format((int)$photo['file_size'] / 1024, 1) ?> KB
-                        </div>
-                        <div class="photo-actions">
-                            <a class="btn btn-sm btn-outline" href="<?= e($photo['url']) ?>" target="_blank">預覽</a>
-                            <?php if (in_array($user['role'], ['主管', '資產管理員'], true)): ?>
-                                <form method="post" onsubmit="return confirm('確定刪除這張照片？');">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="photo_id" value="<?= (int)$photo['photo_id'] ?>">
-                                    <button class="btn btn-sm btn-danger" type="submit">刪除</button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-</div>
-<?php render_footer(); ?>
+		.session-box {
+			text-align: right;
+			font-size: 14px;
+			line-height: 1.4;
+		}
+
+		.page-card {
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			padding: 18px;
+			background: #fff;
+		}
+
+		.report-form {
+			display: grid;
+			gap: 16px;
+		}
+
+		.form-row {
+			display: grid;
+			grid-template-columns: 120px 1fr;
+			gap: 12px;
+			align-items: start;
+		}
+
+		.form-row label {
+			font-weight: 700;
+			padding-top: 8px;
+		}
+
+		.form-row input[type="text"],
+		.form-row input[type="number"],
+		.form-row select,
+		.form-row textarea {
+			width: 100%;
+			box-sizing: border-box;
+			border: 1px solid #bbb;
+			border-radius: 4px;
+			padding: 8px 10px;
+			font-size: 16px;
+			background: #fff;
+		}
+
+		.form-row textarea {
+			min-height: 160px;
+			resize: vertical;
+		}
+
+		.readonly-field {
+			background: #f7f7f7;
+		}
+
+		.photo-list {
+			display: grid;
+			gap: 10px;
+		}
+
+		.photo-row {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			flex-wrap: wrap;
+		}
+
+		.photo-row input[type="file"] {
+			border: 1px solid #bbb;
+			padding: 6px;
+			border-radius: 4px;
+			background: #fff;
+		}
+
+		.button-row {
+			display: flex;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.primary-button,
+		.secondary-button,
+		.small-button {
+			border: 1px solid #111;
+			background: #fff;
+			color: #111;
+			padding: 10px 18px;
+			cursor: pointer;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 700;
+		}
+
+		.primary-button:hover,
+		.secondary-button:hover,
+		.small-button:hover {
+			background: #f2f2f2;
+		}
+
+		.notice {
+			padding: 10px 12px;
+			border-radius: 4px;
+			margin-bottom: 16px;
+		}
+
+		.notice.success {
+			background: #ecfdf3;
+			border: 1px solid #86efac;
+		}
+
+		.notice.error {
+			background: #fef2f2;
+			border: 1px solid #fca5a5;
+		}
+
+		.asset-meta {
+			display: grid;
+			gap: 6px;
+			margin-top: 6px;
+			font-size: 14px;
+			color: #444;
+		}
+
+		@media (max-width: 760px) {
+			.form-row {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+
+<body>
+        <aside class="sidebar">
+            <h3>導覽列</h3>
+            <a href="inspections.php">首頁</a>
+            <a href="assets.php">資產總表</a>
+            <a href="inspec-history.php">巡檢紀錄</a>
+            <a href="new-inspec.php">巡檢排程</a>
+        </aside>
+
+	<div class="main">
+		<div class="headerflex">
+			<h1>巡檢紀錄回報</h1>
+			<div class="session-box">
+				<div><?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?></div>
+				<div><?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?></div>
+				<div><a href="logout.php">切換帳號</a></div>
+			</div>
+		</div>
+
+		<?php if ($message !== ''): ?>
+			<div class="notice <?= htmlspecialchars($messageType) ?>"><?= htmlspecialchars($message) ?></div>
+		<?php endif; ?>
+
+		<section class="page-card">
+			<form class="report-form" method="post" enctype="multipart/form-data">
+				<div class="form-row">
+					<label for="asset_id">項目</label>
+					<div>
+						<select id="asset_id" name="asset_id" required>
+							<option value="">請選擇資產</option>
+							<?php foreach ($assets as $asset): ?>
+								<option value="<?= htmlspecialchars($asset['asset_id']) ?>" <?= $selectedAssetId === $asset['asset_id'] ? 'selected' : '' ?>>
+									<?= htmlspecialchars($asset['asset_id']) ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<div class="asset-meta">
+							<div>資產類型：<span id="asset-type">-</span></div>
+						</div>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<label for="sector_id">安裝位置</label>
+					<div>
+						<input class="readonly-field" id="sector_id" type="text" name="sector_id" value="<?= htmlspecialchars($selectedAsset['sector_id'] ?? '') ?>" readonly>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<label for="observation">檢查敘述</label>
+					<div>
+						<textarea id="observation" name="observation" placeholder="請輸入檢查敘述" required><?= htmlspecialchars($_POST['observation'] ?? '') ?></textarea>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<label for="risk_score">健康度評定</label>
+					<div>
+						<input id="risk_score" type="number" name="risk_score" min="0" max="100" value="<?= htmlspecialchars($_POST['risk_score'] ?? '62') ?>" required>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<label>上傳照片</label>
+					<div>
+						<div id="photo-list" class="photo-list">
+							<div class="photo-row">
+								<input type="file" name="photos[]" accept="image/*">
+							</div>
+						</div>
+						<div class="button-row" style="margin-top: 10px;">
+							<button class="small-button" type="button" id="add-photo">新增</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="button-row">
+					<a class="secondary-button" href="inspections.php">返回</a>
+					<button class="primary-button" type="submit">送出</button>
+				</div>
+			</form>
+		</section>
+	</div>
+
+	<script>
+		const assetsById = <?= json_encode($assetsById, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+		const assetSelect = document.getElementById('asset_id');
+		const sectorField = document.getElementById('sector_id');
+		const assetTypeField = document.getElementById('asset-type');
+		const photoList = document.getElementById('photo-list');
+		const addPhotoButton = document.getElementById('add-photo');
+
+		function syncAssetFields() {
+			const asset = assetsById[assetSelect.value];
+			if (!asset) {
+				sectorField.value = '';
+				assetTypeField.textContent = '-';
+				return;
+			}
+
+			sectorField.value = asset.sector_id || '';
+			assetTypeField.textContent = asset.type || '-';
+		}
+
+		function createPhotoRow() {
+			const row = document.createElement('div');
+			row.className = 'photo-row';
+
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.name = 'photos[]';
+			input.accept = 'image/*';
+
+			const removeButton = document.createElement('button');
+			removeButton.type = 'button';
+			removeButton.className = 'small-button';
+			removeButton.textContent = '刪除';
+			removeButton.addEventListener('click', () => {
+				if (photoList.querySelectorAll('.photo-row').length > 1) {
+					row.remove();
+				} else {
+					input.value = '';
+				}
+			});
+
+			row.appendChild(input);
+			row.appendChild(removeButton);
+			return row;
+		}
+
+		assetSelect.addEventListener('change', syncAssetFields);
+		addPhotoButton.addEventListener('click', () => {
+			photoList.appendChild(createPhotoRow());
+		});
+
+		syncAssetFields();
+	</script>
+</body>
+
+</html>
