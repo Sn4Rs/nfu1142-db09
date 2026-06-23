@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Dotenv\Dotenv;
@@ -96,7 +96,7 @@ foreach ($records as $r) {
     $ts = !empty($r['maint_time']) ? strtotime($r['maint_time']) : false;
 
     if (!$ts) {
-        $groupedRecords['?芸銵極雿?][] = $r;
+        $groupedRecords['未執行工作'][] = $r;
         continue;
     }
 
@@ -112,7 +112,7 @@ foreach ($records as $r) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蝬凋耨蝝??- 頝舫??餃?鞈蝞∠?蝟餌絞</title>
+    <title>維修紀錄 - 路邊電力資產管理系統</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         body {
@@ -337,29 +337,29 @@ foreach ($records as $r) {
 <body>
     <div class="page-shell<?= $selectedRecord ? ' detail-open' : '' ?>" id="page-shell">
         <aside class="sidebar">
-            <h3>撠汗??/h3>
-            <a href="maintenances.php">擐?</a>
-            <a href="assets.php">鞈皜</a>
-            <a href="index.php#powerasset-search">擖??</a>
-            <a href="maint-history.php">蝬凋耨蝝??/a>
-            <a href="maint-todo.php">蝬凋耨撌乩?</a>
-            <a href="parts-request.php">?嗡辣?唾?</a>
-            <a href="schedule-maint.php">摰?蝬凋耨</a>
+            <h3>導覽列</h3>
+            <a href="maintenances.php">首頁</a>
+            <a href="assets.php">資產清單</a>
+            <a href="index.php#powerasset-search">饋線區</a>
+            <a href="maint-history.php">維修紀錄</a>
+            <a href="maint-todo.php">維修工作</a>
+            <a href="parts-request.php">零件申請</a>
+            <a href="schedule-maint.php">安排維修</a>
         </aside>
         <main class="history-main">
             <div class="headerflex">
-                <h1 class="history-title">蝬凋耨蝝??/h1>
+                <h1 class="history-title">維修紀錄</h1>
                 <div class="session-box">
                     <?php if (!empty($_SESSION['employee_id'])): ?>
                     <div>
-                        <?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '雿輻??) ?>
+                        <?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?>
                     </div>
                     <div>
                         <?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?>
                     </div>
-                    <div><a href="logout.php">??撣唾?</a></div>
+                    <div><a href="logout.php">切換帳號</a></div>
                     <?php else: ?>
-                    <a href="login.php">?餃</a>
+                    <a href="login.php">登入</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -367,9 +367,9 @@ foreach ($records as $r) {
             <?php foreach ($groupedRecords as $monthKey => $monthRecords): ?>
             <section class="month-group">
                 <h2 class="month-label">
-                    <?= $monthKey === '?芸銵極雿?
-                        ? '?芸銵極雿?
-                        : htmlspecialchars(str_replace('-', '撟?', $monthKey) . '??) ?>
+                    <?= $monthKey === '未執行工作'
+                        ? '未執行工作'
+                        : htmlspecialchars(str_replace('-', '年 ', $monthKey) . '月') ?>
                 </h2>
                 <?php foreach ($monthRecords as $record): ?>
                 <div class="record-item">
@@ -384,27 +384,27 @@ foreach ($records as $r) {
                         $time = $record['maint_time'] ?? null;
                         $ts = $time ? strtotime($time) : false;
 
-                        echo $ts ? date('n/j', $ts) : '?芾身摰極雿??;
+                        echo $ts ? date('n/j', $ts) : '未設定工作日期';
                         ?>
                     </a>
                     <div class="record-links">
-                        <a href="?record_id=<?= urlencode($record['maint_id']) ?>">?喳閰單?</a>
+                        <a href="?record_id=<?= urlencode($record['maint_id']) ?>">右側詳情</a>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </section>
             <?php endforeach; ?>
             <?php else: ?>
-            <p class="empty-state">?桀?撠蝬剛風蝝??/p>
+            <p class="empty-state">目前尚無維護紀錄。</p>
             <?php endif; ?>
         </main>
         <aside class="detail-panel" id="detail-panel">
             <div class="detail-header">
                 <h2>
-                    蝬剛風蝝?D嚗?
+                    維護紀錄ID：
                     <?= htmlspecialchars($selectedRecord['maint_id'] ?? '') ?>
                 </h2>
-                <a class="close-link" href="maint-history.php">??</a>
+                <a class="close-link" href="maint-history.php">關閉</a>
             </div>
 
             <?php if ($selectedRecord): ?>
@@ -412,16 +412,16 @@ foreach ($records as $r) {
             <div class="detail-card">
 
                 <div class="detail-row">
-                    <span class="detail-label">蝬剛風?交?</span>
+                    <span class="detail-label">維護日期</span>
                     <?= htmlspecialchars($selectedRecord['maint_time'] ?? '') ?>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">???交?</span>
+                    <span class="detail-label">排定日期</span>
                     <?= htmlspecialchars($selectedRecord['scheduled_time'] ?? '') ?>
                 </div>
 
                 <div class="detail-row">
-                    <span class="detail-label">?</span>
+                    <span class="detail-label">項目</span>
                     <?= htmlspecialchars($selectedRecord['asset_id']) ?>
                     <?= !empty($selectedRecord['asset_type'])
                     ? ' (' . htmlspecialchars($selectedRecord['asset_type']) . ')'
@@ -429,31 +429,31 @@ foreach ($records as $r) {
                 </div>
 
                 <div class="detail-row">
-                    <span class="detail-label">摰?雿蔭</span>
+                    <span class="detail-label">安裝位置</span>
                     <?= htmlspecialchars($selectedRecord['sector_id'] ?? '') ?>
                 </div>
 
                 <div class="detail-row">
-                    <span class="detail-label">蝬剛風鈭箏</span>
+                    <span class="detail-label">維護人員</span>
                     <?= htmlspecialchars($selectedRecord['maintainer_name'] ?? '') ?>
                 </div>
 
                 <div class="detail-row">
-                    <span class="detail-label">銵?</span>
+                    <span class="detail-label">行動</span>
                     <?= htmlspecialchars($selectedRecord['action'] ?? '') ?>
                 </div>
 
                 <div class="detail-row">
-                    <span class="detail-label">蝝啁?</span><br>
+                    <span class="detail-label">細節</span><br>
                     <?= nl2br(htmlspecialchars($selectedRecord['details'] ?? '')) ?>
                 </div>
 
                 <div class="detail-row">
-                    <span class="detail-label">???/span>
+                    <span class="detail-label">狀態</span>
                     <?= htmlspecialchars($selectedRecord['status'] ?? '') ?>
                 </div>
 
-                <h3>?抒?</h3>
+                <h3>照片</h3>
 
                 <?php if (!empty($selectedPhotos)): ?>
                 <div class="photo-list">
@@ -474,13 +474,13 @@ foreach ($records as $r) {
                     <?php endforeach; ?>
                 </div>
                 <?php else: ?>
-                <p class="empty-state">?桀?瘝??抒???/p>
+                <p class="empty-state">目前沒有照片。</p>
                 <?php endif; ?>
 
             </div>
 
             <?php else: ?>
-            <p class="empty-state">隢??蝑雁靽桃???/p>
+            <p class="empty-state">請選擇一筆維修紀錄。</p>
             <?php endif; ?>
         </aside>
     </div>

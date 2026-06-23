@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Dotenv\Dotenv;
@@ -32,10 +32,10 @@ try {
         LIMIT 5");
     foreach ($maintenanceStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $recentChanges[] = [
-            'source' => '蝬凋耨蝝??,
+            'source' => '維修紀錄',
             'record_id' => $row['maint_id'],
-            'title' => $row['maint_id'] . ' 繚 ' . $row['asset_id'],
-            'subtitle' => $row['action'] ?: ($row['details'] ?: '蝬凋耨閮??湔'),
+            'title' => $row['maint_id'] . ' · ' . $row['asset_id'],
+            'subtitle' => $row['action'] ?: ($row['details'] ?: '維修記錄更新'),
             'time' => $row['approved_at'] ?: ($row['scheduled_time'] ?: $row['maint_time']),
             'status' => $row['status'],
         ];
@@ -47,10 +47,10 @@ try {
         LIMIT 5");
     foreach ($partsStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $recentChanges[] = [
-            'source' => '?嗡辣?唾?',
+            'source' => '零件申請',
             'record_id' => $row['request_id'],
-            'title' => $row['request_id'] . ' 繚 ' . $row['maint_id'],
-            'subtitle' => $row['reject_reason'] ?: '?嗡辣?唾????' . $row['status'],
+            'title' => $row['request_id'] . ' · ' . $row['maint_id'],
+            'subtitle' => $row['reject_reason'] ?: '零件申請狀態：' . $row['status'],
             'time' => $row['approved_at'] ?: $row['request_time'],
             'status' => $row['status'],
         ];
@@ -78,12 +78,12 @@ try {
 
         foreach ($notifStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $recentChanges[] = [
-                'source' => '?',
+                'source' => '通知',
                 'record_id' => $row['notification_id'],
                 'title' => $row['title'],
                 'subtitle' => $row['content'],
                 'time' => $row['created_at'],
-                'status' => $row['is_read'] ? '撌脰?' : '?芾?',
+                'status' => $row['is_read'] ? '已讀' : '未讀',
             ];
         }
     }
@@ -96,7 +96,7 @@ try {
     $startOfDay = date('Y-m-d 00:00:00');
     $endOfDay   = date('Y-m-d 23:59:59');
 
-    // Only show today's jobs assigned to the logged?n employee
+    // Only show today's jobs assigned to the logged‑in employee
     $todayStmt = $pdo->prepare(
         "SELECT 
             m.maint_id,
@@ -131,7 +131,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蝬凋耨蝝??- 頝舫??餃?鞈蝞∠?蝟餌絞</title>
+    <title>維修紀錄 - 路邊電力資產管理系統</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .main {
@@ -245,19 +245,19 @@ try {
 
 <body>
     <div class="sidebar">
-        <h3>撠汗??/h3>
-        <a href="maintenances.php">擐?</a>
-        <a href="assets.php">鞈皜</a>
-        <a href="index.php#powerasset-search">擖??</a>
-        <a href="maint-history.php">蝬凋耨蝝??/a>
-        <a href="maint-todo.php">蝬凋耨撌乩?</a>
-        <a href="parts-request.php">?嗡辣?唾?</a>
-        <a href="schedule-maint.php">蝬凋耨??</a>
+        <h3>導覽列</h3>
+        <a href="maintenances.php">首頁</a>
+        <a href="assets.php">資產清單</a>
+        <a href="index.php#powerasset-search">饋線區</a>
+        <a href="maint-history.php">維修紀錄</a>
+        <a href="maint-todo.php">維修工作</a>
+        <a href="parts-request.php">零件申請</a>
+        <a href="schedule-maint.php">維修排程</a>
     </div>
 
     <div class="main">
         <div class="headerflex">
-            <h1>蝬凋耨蝝??/h1>
+            <h1>維修紀錄</h1>
 
             <?php if ($flashMessage): ?>
                 <div class="flash <?= htmlspecialchars($flashType) ?>">
@@ -267,17 +267,17 @@ try {
 
             <div class="session-box">
                 <?php if (!empty($_SESSION['employee_id'])): ?>
-                    <div><?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '雿輻??) ?></div>
+                    <div><?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?></div>
                     <div><?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?></div>
-                    <div><a href="logout.php">??撣唾?</a></div>
+                    <div><a href="logout.php">切換帳號</a></div>
                 <?php else: ?>
-                    <a href="login.php">?餃</a>
+                    <a href="login.php">登入</a>
                 <?php endif; ?>
             </div>
         </div>
 
         <section class="section-card">
-            <h2>餈?霈</h2>
+            <h2>近期變更</h2>
             <?php if (count($recentChanges) > 0): ?>
                 <ul class="recent-list">
                     <?php foreach ($recentChanges as $item): ?>
@@ -286,29 +286,29 @@ try {
                                 <strong><?= htmlspecialchars($item['title']) ?></strong>
                                 <span class="recent-time"><?= htmlspecialchars($item['time']) ?></span>
                             </div>
-                            <div class="muted">靘?嚗??= htmlspecialchars($item['source']) ?> 繚 ???<?= htmlspecialchars($item['status']) ?></div>
+                            <div class="muted">來源：<?= htmlspecialchars($item['source']) ?> · 狀態：<?= htmlspecialchars($item['status']) ?></div>
                             <div class="recent-subtitle"><?= htmlspecialchars(mb_strimwidth($item['subtitle'] ?? '', 0, 80, '...')) ?></div>
                         </li>
                     <?php endforeach; ?>
                 </ul>
             <?php else: ?>
-                <p>?桀?撠餈?霈??/p>
+                <p>目前尚無近期變更。</p>
             <?php endif; ?>
         </section>
 
         <section class="section-card" id="today-work">
             <div class="headerflex" style="margin-bottom: 12px;">
-                <h2 style="margin: 0;">隞撌乩?</h2>
-                <a href="maint-todo.php">?亦??券...</a>
+                <h2 style="margin: 0;">今日工作</h2>
+                <a href="maint-todo.php">查看全部...</a>
             </div>
 
             <?php if (count($todayWorks) > 0): ?>
                 <table class="work-table">
                     <thead>
                         <tr>
-                            <th>?</th>
-                            <th>摰???</th>
-                            <th>???/th>
+                            <th>項目</th>
+                            <th>安排時間</th>
+                            <th>狀態</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -318,17 +318,16 @@ try {
                                 <td><?= htmlspecialchars($work['scheduled_time']) ?></td>
                                 <td>
                                     <span class="status-badge"><?= htmlspecialchars($work['status']) ?></span>
-                                    <a href="new-maint.php?record_id=<?= urlencode($work['maint_id']) ?>">憛怠神?勗?</a>
+                                    <a href="new-maint.php?record_id=<?= urlencode($work['maint_id']) ?>">填寫報告</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             <?php else: ?>
-                <p>隞撠蝬凋耨????/p>
+                <p>今日尚無維修排程。</p>
             <?php endif; ?>
         </section>
     </div>
 </body>
 </html>
-

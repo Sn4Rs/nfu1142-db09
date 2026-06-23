@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
@@ -28,8 +28,8 @@ $selectedAssetId = '';
 $action = '';
 $details = '';
 $scheduledTime = '';
-$status = '摰?';  // 摰儔?嗡?敹?????
-$maintId = '';  # $partIds 撌脩???鈭?
+$status = '完成';  // 定義其他必要的變數
+$maintId = '';  # $partIds 已經處理了
 
 function convertDateTimeLocal(?string $value): ?string {
     if (!$value) return null;
@@ -64,7 +64,7 @@ try {
     }
 
 } catch (PDOException $e) {
-    die('鞈?摨恍??憭望?嚗? . $e->getMessage());
+    die('資料庫連線失敗：' . $e->getMessage());
 }
 
 
@@ -119,24 +119,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = trim($_POST['action'] ?? '');
     $details = trim($_POST['details'] ?? '');
     $scheduledTime = trim($_POST['scheduled_time'] ?? '');
-    $status = trim($_POST['status'] ?? '摰?');
+    $status = trim($_POST['status'] ?? '完成');
 
     $partIds = $_POST['part_id'] ?? [];
     $reqQtys = $_POST['req_qty'] ?? [];
 
     $errors = [];
 
-    if ($selectedAssetId === '') $errors[] = '隢????;
-    if ($action === '') $errors[] = '隢‵撖怎雁靽桀?雿?;
-    if ($scheduledTime === '') $errors[] = '隢‵撖急?摰???;
+    if ($selectedAssetId === '') $errors[] = '請選擇資產';
+    if ($action === '') $errors[] = '請填寫維修動作';
+    if ($scheduledTime === '') $errors[] = '請填寫排定時間';
 
-    if ($status === '蝻箔辣') {
+    if ($status === '缺件') {
 
         if (!is_array($partIds)) $partIds = [];
         if (!is_array($reqQtys)) $reqQtys = [];
 
         if (count($partIds) === 0) {
-            $errors[] = '隢撠‵撖思??隞?;
+            $errors[] = '請至少填寫一項零件';
         }
 
         foreach ($partIds as $idx => $pid) {
@@ -144,25 +144,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $qty = $reqQtys[$idx] ?? '';
 
             if (trim($pid) === '') {
-                $errors[] = '蝚?' . ($idx + 1) . ' ?隞貂D銝蝛箇';
+                $errors[] = '第 ' . ($idx + 1) . ' 項零件ID不可空白';
             }
 
             if ($qty === '' || !is_numeric($qty) || (int)$qty <= 0) {
-                $errors[] = '蝚?' . ($idx + 1) . ' ????之??0';
+                $errors[] = '第 ' . ($idx + 1) . ' 項數量必須大於 0';
             }
         }
     }
 
     if (!empty($errors)) {
 
-        $message = implode('嚗?, $errors);
+        $message = implode('；', $errors);
         $messageType = 'error';
 
     } else {
 
         try {
             if (empty($_POST['maint_time'])) {
-                throw new Exception("隢‵撖怎雁霅瑟???);
+                throw new Exception("請填寫維護時間");
             }
             $scheduledTime = $_POST['scheduled_time'] ?? null;
             $maintTime = $_POST['maint_time'] ?? null;
@@ -299,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($maintId)) {
                     throw new Exception("maint_id not initialized");
                 }
-            if ($status === '蝻箔辣' && !empty($partIds)) {
+            if ($status === '缺件' && !empty($partIds)) {
 
                 $requestId = 'PR' . date('YmdHis') . random_int(100, 999);
                 $requestTime = date('Y-m-d H:i:s');
@@ -312,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $requestId,
                     $maintId,
                     $employeeId,
-                    '敺祟',
+                    '待審',
                     $requestTime
                 ]);
 
@@ -327,25 +327,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $requestId,
                         trim($pid),
                         (int)$reqQtys[$idx],
-                        '敺祟'
+                        '待審'
                     ]);
                 }
 
                 $pdo->prepare(
                     'UPDATE Maintenancelog SET status = ? WHERE maint_id = ?'
-                )->execute(['蝻箔辣', $maintId]);
+                )->execute(['缺件', $maintId]);
             }
 
             $pdo->commit();
             // back to homepage
-            $_SESSION['flash_message'] = '蝬凋耨?勗?撌脫???鈭?;
+            $_SESSION['flash_message'] = '維修報告已成功提交';
             $_SESSION['flash_type'] = 'success';
 
 header('Location: maintenances.php');
 exit;
         } catch (Throwable $e) {
             $pdo->rollBack();
-            $message = '蝟餌絞?航炊嚗? . $e->getMessage();
+            $message = '系統錯誤：' . $e->getMessage();
             $messageType = 'error';
         }
     }
@@ -358,7 +358,7 @@ exit;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蝬凋耨?勗? - 頝舫??餃?鞈蝞∠?蝟餌絞</title>
+    <title>維修報告 - 路邊電力資產管理系統</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .page-card {
@@ -427,18 +427,18 @@ exit;
 
 <body>
     <div class="sidebar">
-        <h3>撠汗??/h3>
-        <a href="maintenances.php">擐?</a>
-        <a href="assets.php">鞈皜</a>
-        <a href="index.php#powerasset-search">擖??</a>
-        <a href="maint-history.php">蝬凋耨蝝??/a>
-        <a href="maint-todo.php">蝬凋耨撌乩?</a>
-        <a href="parts-request.php">?嗡辣?唾?</a>
-        <a href="schedule-maint.php">蝬凋耨??</a>
+        <h3>導覽列</h3>
+        <a href="maintenances.php">首頁</a>
+        <a href="assets.php">資產清單</a>
+        <a href="index.php#powerasset-search">饋線區</a>
+        <a href="maint-history.php">維修紀錄</a>
+        <a href="maint-todo.php">維修工作</a>
+        <a href="parts-request.php">零件申請</a>
+        <a href="schedule-maint.php">維修排程</a>
     </div>
     <div class="main">
         <div class="headerflex">
-            <h1>憛怠神蝬凋耨?勗?</h1>
+            <h1>填寫維修報告</h1>
         </div>
         <?php if ($message): ?>
         <p class="<?= $messageType ?>">
@@ -447,8 +447,8 @@ exit;
         <?php endif; ?>
         <div class="page-card">
             <form class="report-form" method="post" enctype="multipart/form-data">
-                <div class="form-row"> <label for="asset_id">鞈</label> <select id="asset_id" name="asset_id" required>
-                        <option value="">隢??/option>
+                <div class="form-row"> <label for="asset_id">資產</label> <select id="asset_id" name="asset_id" required>
+                        <option value="">請選擇</option>
                         <?php foreach ($assets as $asset): ?>
                         <option value="<?= htmlspecialchars($asset['asset_id']) ?>"
                             <?=$asset['asset_id']===$selectedAssetId ? 'selected' : '' ?>>
@@ -456,44 +456,44 @@ exit;
                         </option>
                         <?php endforeach; ?>
                     </select> </div> <input type="hidden" name="maint_id" value="<?= htmlspecialchars($maintId) ?>">
-                <div class="form-row"> <label for="action">蝬凋耨??</label> <textarea id="action" name="action"
+                <div class="form-row"> <label for="action">維修動作</label> <textarea id="action" name="action"
                         required><?= htmlspecialchars($action) ?></textarea> </div>
-                <div class="form-row"> <label for="details">蝬凋耨蝝啁?</label> <textarea id="details" name="details"
+                <div class="form-row"> <label for="details">維修細節</label> <textarea id="details" name="details"
                         required><?= htmlspecialchars($details) ?></textarea> </div>
-                <div class="form-row"> <label for="scheduled_time">????</label> <input type="datetime-local"
+                <div class="form-row"> <label for="scheduled_time">排定時間</label> <input type="datetime-local"
                         id="scheduled_time" name="scheduled_time" value="<?= htmlspecialchars($scheduledTime) ?>"
                         required> </div>
-                <div class="form-row"> <label for="maint_time">蝬剛風??</label> <input type="datetime-local"
+                <div class="form-row"> <label for="maint_time">維護時間</label> <input type="datetime-local"
                         id="maint_time" name="maint_time" value="<?= htmlspecialchars($maintTime) ?>"
                         required> </div>
-                <div class="form-row"> <label for="status">???/label> <select id="status" name="status" required>
-                        <option value="摰?" <?=$status==='摰?' ? 'selected' : '' ?>> 摰? </option>
-                        <option value="蝻箔辣" <?=$status==='蝻箔辣' ? 'selected' : '' ?>> 蝻箔辣 </option>
+                <div class="form-row"> <label for="status">狀態</label> <select id="status" name="status" required>
+                        <option value="完成" <?=$status==='完成' ? 'selected' : '' ?>> 完成 </option>
+                        <option value="缺件" <?=$status==='缺件' ? 'selected' : '' ?>> 缺件 </option>
                     </select> </div>
-                <div class="form-row"> <label>?抒?銝</label>
+                <div class="form-row"> <label>照片上傳</label>
                     <div>
                         <div class="photo-list" id="photo-list">
                             <div class="photo-row"> <input type="file" name="photos[]"> <button type="button"
-                                    class="small-button" onclick="this.parentElement.remove();"> ?芷 </button> </div>
-                        </div> <button type="button" class="small-button" id="add-photo"> ?啣??抒? </button>
+                                    class="small-button" onclick="this.parentElement.remove();"> 刪除 </button> </div>
+                        </div> <button type="button" class="small-button" id="add-photo"> 新增照片 </button>
                     </div>
                 </div> <!-- Parts Section -->
                 <aside id="parts-request-aside"
                     style="display:none; margin-top:20px; border-left:1px solid #ddd; padding-left:20px;">
-                    <h3>?嗡辣?唾?</h3>
+                    <h3>零件申請</h3>
                     <div id="parts-container">
-                        <div class="form-row part-row"> <label for="part_id_0"> ?嗡辣ID <a href="parts-list.php">?嗡辣蝮質”</a>
+                        <div class="form-row part-row"> <label for="part_id_0"> 零件ID <a href="parts-list.php">零件總表</a>
                             </label> <input type="text" id="part_id_0" name="part_id[]"> <label
-                                for="req_qty_0">?賊?</label> <input type="number" id="req_qty_0" name="req_qty[]" min="1">
+                                for="req_qty_0">數量</label> <input type="number" id="req_qty_0" name="req_qty[]" min="1">
                         </div>
                     </div>
-                    <div class="form-row"> <button type="button" id="add-part-btn" class="secondary-button"> ?啣??嗡辣
+                    <div class="form-row"> <button type="button" id="add-part-btn" class="secondary-button"> 新增零件
                         </button> </div>
                 </aside>
-                <div class="form-row"> <button type="submit" class="primary-button"> ?漱?勗? </button> </div>
+                <div class="form-row"> <button type="submit" class="primary-button"> 提交報告 </button> </div>
 
         </div>
-        <!-- Parts request form will be loaded via AJAX when status is 蝻箔辣 -->
+        <!-- Parts request form will be loaded via AJAX when status is 缺件 -->
         <div id="parts-form-container" style="margin-top:20px;"></div>
     </div>
     <script>
@@ -502,22 +502,22 @@ exit;
         addPhotoBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'photo-row';
-            row.innerHTML = '<input type="file" name="photos[]"><button type="button" class="small-button" onclick="this.parentElement.remove();">?芷</button>';
+            row.innerHTML = '<input type="file" name="photos[]"><button type="button" class="small-button" onclick="this.parentElement.remove();">刪除</button>';
             photoList.appendChild(row);
         });
 
-        // Show parts request form when status is 蝻箔辣
+        // Show parts request form when status is 缺件
         const statusSelect = document.getElementById('status');
         const partsRequestAside = document.getElementById('parts-request-aside');
         statusSelect.addEventListener('change', () => {
-            if (statusSelect.value === '蝻箔辣') {
+            if (statusSelect.value === '缺件') {
                 partsRequestAside.style.display = 'block';
             } else {
                 partsRequestAside.style.display = 'none';
             }
         });
         // Initial state
-        if (statusSelect.value !== '蝻箔辣') {
+        if (statusSelect.value !== '缺件') {
             partsRequestAside.style.display = 'none';
         }
 
@@ -528,11 +528,11 @@ exit;
             const row = document.createElement('div');
             row.className = 'form-row part-row';
             row.innerHTML = `
-                <label for="part_id_${partIndex}">?嗡辣</label>
+                <label for="part_id_${partIndex}">零件</label>
                 <input type="text" id="part_id_${partIndex}" name="part_id[]" required>
-                <label for="req_qty_${partIndex}">?賊?</label>
+                <label for="req_qty_${partIndex}">數量</label>
                 <input type="number" id="req_qty_${partIndex}" name="req_qty[]" min="1" required>
-                <button type="button" class="small-button" onclick="this.parentElement.remove();">?芷</button>
+                <button type="button" class="small-button" onclick="this.parentElement.remove();">刪除</button>
             `;
             partsContainer.appendChild(row);
             partIndex++;

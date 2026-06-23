@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
@@ -66,7 +66,7 @@ foreach ($partsRaw as $p) {
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>?嗡辣?唾??”</title>
+    <title>零件申請列表</title>
     <link rel="stylesheet" href="css/style.css">
    <style>
         .main {
@@ -181,21 +181,21 @@ foreach ($partsRaw as $p) {
 <body>
 
 <div class="sidebar">
-    <h3>撠汗??/h3>
-    <a href="maintenances.php">擐?</a>
-    <a href="assets.php">鞈皜</a>
-    <a href="index.php#powerasset-search">擖??</a>
-    <a href="maint-history.php">蝬凋耨蝝??/a>
-    <a href="maint-todo.php">蝬凋耨撌乩?</a>
-    <a href="parts-request.php">?嗡辣?唾?</a>
-    <a href="schedule-maint.php">蝬凋耨??</a>
+    <h3>導覽列</h3>
+    <a href="maintenances.php">首頁</a>
+    <a href="assets.php">資產清單</a>
+    <a href="index.php#powerasset-search">饋線區</a>
+    <a href="maint-history.php">維修紀錄</a>
+    <a href="maint-todo.php">維修工作</a>
+    <a href="parts-request.php">零件申請</a>
+    <a href="schedule-maint.php">維修排程</a>
 </div>
 
 
 <div class="main">
 
     <div class="headerflex">
-        <h1>?嗡辣?唾??”</h1>
+        <h1>零件申請列表</h1>
     </div>
 
     <?php foreach ($requests as $r): ?>
@@ -221,25 +221,25 @@ foreach ($partsRaw as $p) {
             </div>
 
             <div class="recent-subtitle">
-                <div><b>蝬凋耨??</b> <?= htmlspecialchars($r['maint_id']) ?></div>
-                <div><b>鞈:</b> <?= htmlspecialchars($r['asset_id']) ?></div>
-                <div><b>??:</b> <?= htmlspecialchars($r['action']) ?></div>
-                <div><b>?銵:</b> <?= htmlspecialchars($r['technician_id']) ?></div>
-                <div><b>蝬凋耨???</b> <?= htmlspecialchars($r['maint_status']) ?></div>
+                <div><b>維修單:</b> <?= htmlspecialchars($r['maint_id']) ?></div>
+                <div><b>資產:</b> <?= htmlspecialchars($r['asset_id']) ?></div>
+                <div><b>動作:</b> <?= htmlspecialchars($r['action']) ?></div>
+                <div><b>技術員:</b> <?= htmlspecialchars($r['technician_id']) ?></div>
+                <div><b>維修狀態:</b> <?= htmlspecialchars($r['maint_status']) ?></div>
             </div>
 
             <table class="work-table" style="margin-top:12px;">
                 <thead>
                     <tr>
                         <th>Part ID</th>
-                        <th>?賊?</th>
-                        <th>???/th>
+                        <th>數量</th>
+                        <th>狀態</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($parts)): ?>
                         <tr>
-                            <td colspan="3" class="muted">?⊿隞嗉???/td>
+                            <td colspan="3" class="muted">無零件資料</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($parts as $p): ?>
