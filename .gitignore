@@ -17,3 +17,6 @@ Thumbs.db
 *.code-workspace
 
 # Note: schema.sql is NOT ignored so that the database structure is shared with the team.
+
+src/public/uploads/inspection/*
+!src/public/uploads/inspection/.gitkeep
