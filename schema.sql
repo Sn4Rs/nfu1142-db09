@@ -1,7 +1,7 @@
 -- run mysql -u root -p db09 < schema.sql
 
-CREATE DATABASE IF NOT EXISTS `db09`;
-USE `db09`;
+CREATE DATABASE IF NOT EXISTS `csieDBTeam09`;
+USE `csieDBTeam09`;
 
 CREATE TABLE IF NOT EXISTS `Powerasset` (
   `asset_id` varchar(10) PRIMARY KEY NOT NULL comment '資產ID',

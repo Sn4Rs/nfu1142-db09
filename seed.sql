@@ -1,4 +1,4 @@
-USE `db09`;
+USE `csieDBTeam09`;
 
 -- 1. Manufacturer (10 rows)
 INSERT INTO `Manufacturer` (`manufacturer_id`, `name`, `country`) VALUES

@@ -282,14 +282,15 @@ if ($selectedRecord !== null) {
 
 <body>
     <div class="page-shell<?= $selectedRecord ? ' detail-open' : '' ?>" id="page-shell">
-        <aside class="sidebar">
-    <h3>巡檢管理</h3>
 
-    <a href="inspections.php">巡檢首頁</a>
-    <a href="new-inspec.php">新增巡檢紀錄</a>
-    <a href="inspec-history.php">巡檢歷史紀錄</a>
-    <a href="photos.php">巡檢照片管理</a>
-</aside>
+        <aside class="sidebar">
+            <h3>導覽列</h3>
+            <a href="inspections.php">首頁</a>
+            <a href="assets.php">資產總表</a>
+            <a href="inspec-history.php">巡檢紀錄</a>
+            <a href="new-inspec.php">巡檢回報</a>
+        </aside>
+
 
         <main class="history-main">
             <div class="headerflex">
