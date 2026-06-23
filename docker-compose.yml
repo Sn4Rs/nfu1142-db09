@@ -21,7 +21,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: myPotato
-      MYSQL_DATABASE: db-proj-db
+      MYSQL_DATABASE: csieDBTeam09
+      MYSQL_USER: xxxxx
+      MYSQL_PASSWORD: xxxxx
     ports:
       - "3306:3306"
     volumes:
