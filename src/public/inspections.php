@@ -113,12 +113,13 @@ $todayInspections = [];
     ?>
 
         <aside class="sidebar">
-            <h3>導覽列</h3>
-            <a href="inspections.php">首頁</a>
-            <a href="assets.php">資產總表</a>
-            <a href="inspec-history.php">巡檢紀錄</a>
-            <a href="new-inspec.php">巡檢排程</a>
-        </aside>
+    <h3>巡檢管理</h3>
+
+    <a href="inspections.php">巡檢首頁</a>
+    <a href="new-inspec.php">新增巡檢紀錄</a>
+    <a href="inspec-history.php">巡檢歷史紀錄</a>
+    <a href="photos.php">巡檢照片管理</a>
+</aside>
 
     <div class="main">
         <div class="headerflex">
