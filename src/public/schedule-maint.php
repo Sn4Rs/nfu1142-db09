@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
 if (session_status() === PHP_SESSION_NONE) {
@@ -51,7 +51,7 @@ $assetStmt = $pdo->query('SELECT asset_id, sector_id, type, spec_id FROM Poweras
 $assets = $assetStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get all technicians (employees)
-$techStmt = $pdo->query('SELECT id_num, fullname, role FROM Employees WHERE role LIKE "%technician%" OR role LIKE "%維修%" ORDER BY fullname ASC');
+$techStmt = $pdo->query('SELECT id_num, fullname, role FROM Employees WHERE role LIKE "%technician%" OR role LIKE "%蝬凋耨%" ORDER BY fullname ASC');
 $technicians = $techStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Find selected asset
@@ -90,16 +90,16 @@ $techStmt->execute([$selectedTechnicianId]);
 $selectedTechnician = $techStmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
 if ($selectedAsset === false || $selectedAsset === null) {
-$message = '請先選擇有效的資產項目。';
+$message = '隢??豢??????ａ??柴?;
 $messageType = 'error';
 } elseif ($selectedTechnician === false || $selectedTechnician === null) {
-$message = '請選擇有效的技術員。';
+$message = '隢?????銵??;
 $messageType = 'error';
 } elseif ($action === '') {
-$message = '請輸入維護動作。';
+$message = '隢撓?亦雁霅瑕?雿?;
 $messageType = 'error';
 } elseif ($scheduledTime === '') {
-$message = '請選擇預定時間。';
+$message = '隢??摰???;
 $messageType = 'error';
 } else {
 $pdo->beginTransaction();
@@ -107,7 +107,7 @@ try {
 // Generate maintenance ID
 $maintId = 'MT' . date('YmdHis') . random_int(100, 999);
 $assignedBy = $_SESSION['employee_id'];
-$status = '待處理';
+$status = '敺???;
 
 // Insert maintenance record into Maintenancelog
             $insertStmt = $pdo->prepare('INSERT INTO Maintenancelog (maint_id, asset_id, technician_id, action, details, scheduled_time, status, assigned_by, work_hours, labor_cost, material_cost) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
@@ -126,7 +126,7 @@ $status = '待處理';
 ]);
 
 $pdo->commit();
-$message = '維護排程已建立。';
+$message = '蝬剛風??撌脣遣蝡?;
 $messageType = 'success';
 
 // Reset form values
@@ -144,13 +144,13 @@ $selectedTechnician = null;
 if ($pdo->inTransaction()) {
 $pdo->rollBack();
 }
-$message = '建立失敗，請稍後再試。';
+$message = '撱箇?憭望?嚗?蝔??岫??;
 $messageType = 'error';
 }
 }
 }
 } catch (PDOException $e) {
-$message = '資料庫連線失敗。';
+$message = '鞈?摨恍??憭望???;
 $messageType = 'error';
 }
 
@@ -170,7 +170,7 @@ $techniciansById[$technician['id_num']] = $technician;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>維護排程 - 路邊電力資產管理系統</title>
+    <title>蝬剛風?? - 頝舫??餃?鞈蝞∠?蝟餌絞</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .headerflex {
@@ -296,26 +296,26 @@ $techniciansById[$technician['id_num']] = $technician;
 
 <body>
     <div class="sidebar">
-        <h3>導覽列</h3>
-        <a href="maintenances.php">首頁</a>
-        <a href="assets.php">資產清單</a>
-        <a href="index.php#powerasset-search">饋線區</a>
-        <a href="maint-history.php">維修紀錄</a>
-        <a href="maint-todo.php">維修工作</a>
-        <a href="parts-request.php">零件申請</a>
-        <a href="schedule-maint.php">維修排程</a>
+        <h3>撠汗??/h3>
+        <a href="maintenances.php">擐?</a>
+        <a href="assets.php">鞈皜</a>
+        <a href="index.php#powerasset-search">擖??</a>
+        <a href="maint-history.php">蝬凋耨蝝??/a>
+        <a href="maint-todo.php">蝬凋耨撌乩?</a>
+        <a href="parts-request.php">?嗡辣?唾?</a>
+        <a href="schedule-maint.php">蝬凋耨??</a>
     </div>
     <div class="main">
         <div class="headerflex">
-            <h1>安排維修工作</h1>
+            <h1>摰?蝬凋耨撌乩?</h1>
             <div class="session-box">
                 <div>
-                    <?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '使用者') ?>
+                    <?= htmlspecialchars($_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '雿輻??) ?>
                 </div>
                 <div>
                     <?= htmlspecialchars($_SESSION['employee_role'] ?? '') ?>
                 </div>
-                <div><a href="logout.php">切換帳號</a></div>
+                <div><a href="logout.php">??撣唾?</a></div>
             </div>
         </div>
         <?php if ($message !== ''): ?>
@@ -326,11 +326,11 @@ $techniciansById[$technician['id_num']] = $technician;
         <section class="page-card">
             <form class="report-form" method="post">
                 <div class="form-row">
-                    <label for="asset_id">資產項目</label>
+                    <label for="asset_id">鞈?</label>
                     <div>
                         <select id="asset_id" name="asset_id" required>
 
-                            <option value="">請選擇資產</option>
+                            <option value="">隢????/option>
                             <?php foreach ($assets as $asset): ?>
                             <option value="<?= htmlspecialchars($asset['asset_id']) ?>"
                                 <?=$selectedAssetId===$asset['asset_id'] ? 'selected' : '' ?>>
@@ -339,16 +339,16 @@ $techniciansById[$technician['id_num']] = $technician;
                             <?php endforeach; ?>
                         </select>
                         <div class="asset-meta">
-                            <div>資產類型：<span id="asset-type">-</span></div>
-                            <div>安裝位置：<span id="asset-sector">-</span></div>
+                            <div>鞈憿?嚗?span id="asset-type">-</span></div>
+                            <div>摰?雿蔭嚗?span id="asset-sector">-</span></div>
                         </div>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="technician_id">技術員</label>
+                    <label for="technician_id">?銵</label>
                     <div>
                         <select id="technician_id" name="technician_id" required>
-                            <option value="">請選擇技術員</option>
+                            <option value="">隢??銵</option>
                             <?php foreach ($technicians as $technician): ?>
                             <option value="<?= htmlspecialchars($technician['id_num']) ?>"
                                 <?=$selectedTechnicianId===$technician['id_num'] ? 'selected' : '' ?>>
@@ -358,55 +358,55 @@ $techniciansById[$technician['id_num']] = $technician;
                             <?php endforeach; ?>
                         </select>
                         <div class="technician-meta">
-                            <div>職位：<span id="technician-role">-</span></div>
+                            <div>?瑚?嚗?span id="technician-role">-</span></div>
                         </div>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="action">維護動作</label>
+                    <label for="action">蝬剛風??</label>
                     <div>
                         <input type="text" id="action" name="action" value="<?= htmlspecialchars($action) ?>"
-                            placeholder="請輸入維護動作" required>
+                            placeholder="隢撓?亦雁霅瑕?雿? required>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="details">詳細說明</label>
+                    <label for="details">閰喟敦隤芣?</label>
                     <div>
                         <textarea id="details" name="details"
-                            placeholder="請輸入詳細說明"><?= htmlspecialchars($details) ?></textarea>
+                            placeholder="隢撓?亥底蝝啗牧??><?= htmlspecialchars($details) ?></textarea>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="scheduled_time">預定時間</label>
+                    <label for="scheduled_time">????</label>
                     <div>
                         <input type="datetime-local" id="scheduled_time" name="scheduled_time"
                             value="<?= htmlspecialchars($scheduledTime) ?>" required>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="work_hours">工時(小時)</label>
+                    <label for="work_hours">撌交?(撠?)</label>
                     <div>
                         <input type="number" id="work_hours" name="work_hours" min="0" step="0.5"
-                            value="<?= htmlspecialchars($workHours) ?>" placeholder="請輸入工時">
+                            value="<?= htmlspecialchars($workHours) ?>" placeholder="隢撓?亙極??>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="labor_cost">人工成本</label>
+                    <label for="labor_cost">鈭箏極?</label>
                     <div>
                         <input type="number" id="labor_cost" name="labor_cost" min="0" step="0.01"
-                            value="<?= htmlspecialchars($laborCost) ?>" placeholder="請輸入人工成本">
+                            value="<?= htmlspecialchars($laborCost) ?>" placeholder="隢撓?乩犖撌交???>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label for="material_cost">材料成本</label>
+                    <label for="material_cost">???</label>
                     <div>
                         <input type="number" id="material_cost" name="material_cost" min="0" step="0.01"
-                            value="<?= htmlspecialchars($materialCost) ?>" placeholder="請輸入材料成本">
+                            value="<?= htmlspecialchars($materialCost) ?>" placeholder="隢撓?交?????>
                     </div>
                 </div>
                 <div class="button-row">
-                    <a class="secondary-button" href="maintenances.php">返回</a>
-                    <button class="primary-button" type="submit">建立排程</button>
+                    <a class="secondary-button" href="maintenances.php">餈?</a>
+                    <button class="primary-button" type="submit">撱箇???</button>
                 </div>
             </form>
         </section>

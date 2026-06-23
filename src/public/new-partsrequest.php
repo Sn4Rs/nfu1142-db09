@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
 
@@ -27,7 +27,7 @@ $isSupervisor = stripos($employeeRole, 'deptmanager') !== false || stripos($empl
     $action = '';
     $details = '';
     $scheduledTime = '';
-    $status = '缺件';
+    $status = '蝻箔辣';
 $photoFiles = [];
 
 try {
@@ -35,7 +35,7 @@ try {
     $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    $message = '資料庫連線失敗。';
+    $message = '鞈?摨恍??憭望???;
     $messageType = 'error';
 }
 
@@ -63,7 +63,7 @@ try {
         $action = trim($_POST['action'] ?? '');
         $details = trim($_POST['details'] ?? '');
         $scheduledTime = trim($_POST['scheduled_time'] ?? '');
-        $status = trim($_POST['status'] ?? '完成');
+        $status = trim($_POST['status'] ?? '摰?');
 
         // Basic validation for parts request
         $maintId = trim($_POST['maint_id'] ?? '');
@@ -74,14 +74,14 @@ try {
         foreach ($partIds as $idx => $pid) {
             $qty = $reqQtys[$idx] ?? '';
             if ($pid === '' || !is_string($pid)) {
-                $invalidParts[] = "零件欄位第 {$idx} 位置必須為文字";
+                $invalidParts[] = "?嗡辣甈?蝚?{$idx} 雿蔭敹??箸?摮?;
             }
             if ($qty === '' || !is_numeric($qty) || (int)$qty <= 0) {
-                $invalidParts[] = "數量欄位第 {$idx} 位置必須為正整數";
+                $invalidParts[] = "?賊?甈?蝚?{$idx} 雿蔭敹??箸迤?湔";
             }
         }
         if ($maintId === '' || empty($partIds) || empty($reqQtys) || !empty($invalidParts)) {
-            $message = '請填寫所有必填欄位。';
+            $message = '隢‵撖急???憛急?雿?;
         }
             if (!empty($invalidParts)) {
                 $message .= ' ' . implode(' ', $invalidParts);
@@ -100,7 +100,7 @@ try {
                         $requestId,
                         $maintId,
                         $employeeId,
-                        '待審',
+                        '敺祟',
                         $requestTime,
                     ]);
                         // Insert each part line
@@ -113,7 +113,7 @@ try {
                                 $requestId,
                                 $pid,
                                 $qty,
-                                '待審',
+                                '敺祟',
                             ]);
                         }
 
@@ -153,14 +153,14 @@ try {
                             }
                         }
 
-                        // Update status of the associated Maintenancelog to '缺件'
+                        // Update status of the associated Maintenancelog to '蝻箔辣'
                         $updateStmt = $pdo->prepare(
                             'UPDATE Maintenancelog SET status = ?, approved_by = ?, approved_at = ? WHERE maint_id = ?'
                         );
-                        $updateStmt->execute(['缺件', $employeeId, date('Y-m-d H:i:s'), $maintId]);
+                        $updateStmt->execute(['蝻箔辣', $employeeId, date('Y-m-d H:i:s'), $maintId]);
 
                         $pdo->commit();
-                        $message = '零件申請已建立，維修紀錄已標記為缺件，請等待審核。';
+                        $message = '?嗡辣?唾?撌脣遣蝡?蝬凋耨蝝?歇璅??箇撩隞塚?隢?敺祟?詻?;
                         $messageType = 'success';
 
                         // Reset form
@@ -168,13 +168,13 @@ try {
                         $action = '';
                         $details = '';
                         $scheduledTime = '';
-                        $status = '完成';
+                        $status = '摰?';
                     } catch (Throwable $e) {
                         if ($pdo->inTransaction()) {
                             $pdo->rollBack();
                         }
                         // Append exception message for debugging (remove in prod)
-                        $message = '建立失敗，請稍後再試。 ' . $e->getMessage();
+                        $message = '撱箇?憭望?嚗?蝔??岫??' . $e->getMessage();
                         $messageType = 'error';
                     }
     foreach ($assets as $asset) {
@@ -187,7 +187,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>維修排程 - 路邊電力資產管理系統</title>
+    <title>蝬凋耨?? - 頝舫??餃?鞈蝞∠?蝟餌絞</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .page-card {border:1px solid #ddd;border-radius:8px;padding:18px;background:#fff;}
@@ -204,44 +204,44 @@ try {
 </head>
 <body>
     <div class="sidebar">
-        <h3>導覽列</h3>
-        <a href="maintenances.php">首頁</a>
-        <a href="assets.php">資產清單</a>
-        <a href="index.php#powerasset-search">饋線區</a>
-        <a href="maint-history.php">維修紀錄</a>
-        <a href="maint-todo.php">維修工作</a>
-        <a href="parts-request.php">零件申請</a>
-        <a href="schedule-maint.php">維修排程</a>
+        <h3>撠汗??/h3>
+        <a href="maintenances.php">擐?</a>
+        <a href="assets.php">鞈皜</a>
+        <a href="index.php#powerasset-search">擖??</a>
+        <a href="maint-history.php">蝬凋耨蝝??/a>
+        <a href="maint-todo.php">蝬凋耨撌乩?</a>
+        <a href="parts-request.php">?嗡辣?唾?</a>
+        <a href="schedule-maint.php">蝬凋耨??</a>
     </div>
     <div class="main">
-        <div class="headerflex"><h1>新增缺件申請</h1></div>
+        <div class="headerflex"><h1>?啣?蝻箔辣?唾?</h1></div>
         <?php if ($message): ?>
             <p class="<?= $messageType ?>"><?= htmlspecialchars($message) ?></p>
         <?php endif; ?>
         <div class="page-card">
-            <h3>維修紀錄摘要</h3>
+            <h3>蝬凋耨蝝??閬?/h3>
             <div class="detail-card">
-                <div class="detail-row"><strong>資產:</strong> <?= htmlspecialchars($selectedAssetId) ?></div>
-                <div class="detail-row"><strong>動作:</strong> <?= htmlspecialchars($action) ?></div>
-                <div class="detail-row"><strong>細節:</strong> <?= nl2br(htmlspecialchars($details)) ?></div>
-                <div class="detail-row"><strong>排定時間:</strong> <?= htmlspecialchars($scheduledTime) ?></div>
-                <div class="detail-row"><strong>狀態:</strong> <?= htmlspecialchars($status) ?></div>
+                <div class="detail-row"><strong>鞈:</strong> <?= htmlspecialchars($selectedAssetId) ?></div>
+                <div class="detail-row"><strong>??:</strong> <?= htmlspecialchars($action) ?></div>
+                <div class="detail-row"><strong>蝝啁?:</strong> <?= nl2br(htmlspecialchars($details)) ?></div>
+                <div class="detail-row"><strong>????:</strong> <?= htmlspecialchars($scheduledTime) ?></div>
+                <div class="detail-row"><strong>???</strong> <?= htmlspecialchars($status) ?></div>
             </div>
-            <h3>零件申請</h3>
+            <h3>?嗡辣?唾?</h3>
             <form class="report-form" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="maint_id" value="<?= htmlspecialchars($_GET['maint_id'] ?? '') ?>">
                 <div id="parts-container">
                     <div class="form-row part-row">
-                        <label for="part_id_0">零件ID<a href="parts-list.php"> 零件總表</a></label>
+                        <label for="part_id_0">?嗡辣ID<a href="parts-list.php"> ?嗡辣蝮質”</a></label>
                         <input type="text" id="part_id_0" name="part_id[]" required>
                         
-                        <label for="req_qty_0">數量</label>
+                        <label for="req_qty_0">?賊?</label>
                         <input type="number" id="req_qty_0" name="req_qty[]" min="1" required>
                     </div>
                 </div>
-                <div class="form-row"><button type="button" id="add-part-btn" class="secondary-button">新增零件</button></div>
-                <input type="hidden" name="part_status" value="待審">
-                <div class="form-row"><button type="submit" class="primary-button">提交零件申請</button></div>
+                <div class="form-row"><button type="button" id="add-part-btn" class="secondary-button">?啣??嗡辣</button></div>
+                <input type="hidden" name="part_status" value="敺祟">
+                <div class="form-row"><button type="submit" class="primary-button">?漱?嗡辣?唾?</button></div>
             </form>
         </div>
     </div>
@@ -253,11 +253,11 @@ try {
             const row = document.createElement('div');
             row.className = 'form-row part-row';
             row.innerHTML = `
-                <label for="part_id_${partIndex}">零件</label>
+                <label for="part_id_${partIndex}">?嗡辣</label>
                 <input type="text" id="part_id_${partIndex}" name="part_id[]" required>
-                <label for="req_qty_${partIndex}">數量</label>
+                <label for="req_qty_${partIndex}">?賊?</label>
                 <input type="number" id="req_qty_${partIndex}" name="req_qty[]" min="1" required>
-                <button type="button" class="small-button" onclick="this.parentElement.remove();">刪除</button>
+                <button type="button" class="small-button" onclick="this.parentElement.remove();">?芷</button>
             `;
             partsContainer.appendChild(row);
             partIndex++;
