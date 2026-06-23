@@ -289,6 +289,9 @@ if ($selectedRecord !== null) {
             <a href="assets.php">資產總表</a>
             <a href="inspec-history.php">巡檢紀錄</a>
             <a href="new-inspec.php">巡檢回報</a>
+        <!-- USER_BACKEND_ROLE_MENU_START -->
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+        <!-- USER_BACKEND_ROLE_MENU_END -->
         </aside>
 
 

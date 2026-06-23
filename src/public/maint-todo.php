@@ -24,8 +24,10 @@ try {
         "SELECT m.maint_id, m.asset_id, m.status, m.scheduled_time, m.action, m.details, e.fullname AS technician_name\n"
         . "FROM Maintenancelog m\n"
         . "LEFT JOIN Employees e ON m.technician_id = e.id_num\n"
-        . "WHERE m.technician_id = :employee_id AND m.scheduled_time >= CURDATE()\n"
-        . "ORDER BY m.scheduled_time ASC, m.maint_id ASC"
+        . "WHERE m.technician_id = :employee_id\n"
+        . "  AND m.status NOT IN ('完成', '已簽核')\n"
+        . "ORDER BY CASE WHEN m.status = '缺件' THEN 1 ELSE 0 END ASC,\n"
+        . "         COALESCE(m.scheduled_time, '9999-12-31 23:59:59') ASC, m.maint_id ASC"
     );
     $stmt->execute([':employee_id' => $employeeId]);
     $scheduledWorks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -114,6 +116,9 @@ try {
         <a href="maint-todo.php">維修工作</a>
         <a href="parts-request.php">零件申請</a>
         <a href="schedule-maint.php">維修排程</a>
+        <!-- USER_BACKEND_ROLE_MENU_START -->
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+        <!-- USER_BACKEND_ROLE_MENU_END -->
     </div>
 
     <div class="main">
@@ -131,7 +136,7 @@ try {
         </div>
 
         <section class="section-card">
-            <h2>今日排程</h2>
+            <h2>待執行與待補維修</h2>
             <?php if (count($scheduledWorks) > 0): ?>
                 <table class="work-table">
                     <thead>
@@ -149,7 +154,11 @@ try {
                                 <td><?= htmlspecialchars($work['scheduled_time']) ?></td>
                                 <td><span class="status-badge"><?= htmlspecialchars($work['status']) ?></span></td>
                                 <td class="action-links">
+                                    <a href="new-maint.php?record_id=<?= urlencode($work['maint_id']) ?>">填報維修</a>
                                     <a href="maint-history.php?record_id=<?= urlencode($work['maint_id']) ?>">查看詳情</a>
+                                    <?php if (($work['status'] ?? '') === '缺件'): ?>
+                                        <a href="new-partsrequest.php?maint_id=<?= urlencode($work['maint_id']) ?>">補充缺件申請</a>
+                                    <?php endif; ?>
                                     <a href="schedule-maint.php?asset_id=<?= urlencode($work['asset_id']) ?>">編輯排程</a>
                                 </td>
                             </tr>
@@ -157,7 +166,7 @@ try {
                     </tbody>
                 </table>
             <?php else: ?>
-                <p>今日尚無維修排程。</p>
+                <p>目前沒有待執行或待補的維修工作。</p>
             <?php endif; ?>
         </section>
     </div>
