@@ -8,20 +8,20 @@ services:
     volumes:
       - .:/var/www/html
     depends_on:
-      - csieDBTeam09
+      - db-proj-db
     networks:
       - stock-network
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
 
   # 2. MariaDB 資料庫
-  csieDBTeam09:
+  db-proj-db:
     image: mariadb:10.6
     container_name: db09-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: myPotato
-      MYSQL_DATABASE: csieDBTeam09
+      MYSQL_DATABASE: db-proj-db
     ports:
       - "3306:3306"
     volumes:
@@ -37,13 +37,13 @@ services:
     container_name: db09-pma
     restart: always
     environment:
-      PMA_HOST: csieDBTeam09
+      PMA_HOST: db-proj-db
       PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: myPotato
     ports:
       - "8082:80"
     depends_on:
-      - csieDBTeam09
+      - db-proj-db
     networks:
       - stock-network
 
