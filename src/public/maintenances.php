@@ -253,6 +253,9 @@ try {
         <a href="maint-todo.php">維修工作</a>
         <a href="parts-request.php">零件申請</a>
         <a href="schedule-maint.php">維修排程</a>
+        <!-- USER_BACKEND_ROLE_MENU_START -->
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+        <!-- USER_BACKEND_ROLE_MENU_END -->
     </div>
 
     <div class="main">

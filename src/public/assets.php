@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Dotenv\Dotenv;
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 ?>
@@ -21,6 +26,9 @@ $dotenv->load();
         <h3>清單</h3>
         <a href="index.php">首頁</a>
         <a href="assets.php">資產總表</a>
+        <!-- USER_BACKEND_ROLE_MENU_START -->
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+        <!-- USER_BACKEND_ROLE_MENU_END -->
     </div>
 
     <div class="main">
