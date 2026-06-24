@@ -1,48 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+declare(strict_types=1);
 
-$role = strtolower((string)($_SESSION['employee_role'] ?? ''));
-if (empty($_SESSION['employee_id'])) {
-    header('Location: login.php');
-    exit;
-}
-if (!in_array($role, ['assetmanager', 'deptmanager'], true)) {
-    header('Location: index.php');
-    exit;
-}
+require_once __DIR__ . '/backend-common.php';
+require_once __DIR__ . '/backend-layout.php';
+backend_require_roles(['deptmanager', 'assetmanager']);
+
+backend_render_header('資產地圖導覽', '依供電領地與健康度篩選資產 Marker。');
 ?>
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>資產地圖導覽 - 路邊電力資產管理系統</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <aside class="sidebar">
-        <h3>管理後台</h3>
-        <a href="admin_dashboard.php">後台總覽</a>
-        <a href="asset_map.php">資產地圖導覽</a>
-        <a href="admin_sector.php">饋線領地管理</a>
-        <a href="risk_warning.php">智慧預警中心</a>
-        <a href="stock_review.php">零件庫存審核</a>
-        <a href="assets.php">資產總表</a>
-        <a href="logout.php">登出</a>
-    </aside>
-
-    <main class="main admin-shell">
-        <header class="admin-header">
-            <div>
-                <h1>資產地圖導覽與視覺化看板</h1>
-                <p>依供電領地與健康度篩選資產 Marker。</p>
-            </div>
-            <a class="admin-button" href="admin_dashboard.php">回後台總覽</a>
-        </header>
-
-        <form class="admin-filter-bar" id="map-filter">
+<form class="admin-filter-bar" id="map-filter">
             <label>供電領地
                 <select name="feeder_area" id="feeder-area">
                     <option value="">全部</option>
@@ -75,9 +40,7 @@ if (!in_array($role, ['assetmanager', 'deptmanager'], true)) {
             <h2>地圖資產清單</h2>
             <div id="marker-table"></div>
         </section>
-    </main>
-
-    <script>
+<script>
         const query = new URLSearchParams(window.location.search);
 
         function healthClass(level) {
@@ -228,5 +191,4 @@ if (!in_array($role, ['assetmanager', 'deptmanager'], true)) {
             document.getElementById('map-board').innerHTML = `<div class="error-box">${escapeHtml(error.message)}</div>`;
         });
     </script>
-</body>
-</html>
+<?php backend_render_footer(); ?>

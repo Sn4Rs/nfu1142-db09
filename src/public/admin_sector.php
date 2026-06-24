@@ -1,31 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-$role = strtolower((string)($_SESSION['employee_role'] ?? ''));
-if (empty($_SESSION['employee_id'])) { header('Location: login.php'); exit; }
-if (!in_array($role, ['assetmanager', 'deptmanager'], true)) { header('Location: index.php'); exit; }
+declare(strict_types=1);
+
+require_once __DIR__ . '/backend-common.php';
+require_once __DIR__ . '/backend-layout.php';
+backend_require_roles(['deptmanager', 'assetmanager']);
+
+backend_render_header('饋線領地與設備異動管理', '管理分區資產，並對報廢或遷移分區寫入稽核紀錄。');
 ?>
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>饋線領地與設備異動管理</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <aside class="sidebar admin-nav">
-        <h3>管理後台</h3>
-        <a href="admin_dashboard.php">後台總覽</a>
-        <a href="asset_map.php">資產地圖導覽</a>
-        <a href="admin_sector.php">饋線領地管理</a>
-        <a href="risk_warning.php">智慧預警中心</a>
-        <a href="stock_review.php">零件庫存審核</a>
-        <a href="assets.php">資產總表</a>
-        <a href="logout.php">登出</a>
-    </aside>
-    <main class="main admin-shell">
-        <header class="admin-header"><div><h1>饋線領地與設備異動管理</h1><p>管理分區資產，並對報廢或遷移分區寫入稽核紀錄。</p></div></header>
-        <section class="asset-map-layout">
+<section class="asset-map-layout">
             <div class="admin-panel"><h2>供電領地列表</h2><div id="sector-list" class="stack-list"></div></div>
             <div class="admin-panel"><h2>分區資產明細</h2><div id="sector-assets" class="stack-list"><div class="empty-state">請先選擇左側分區。</div></div></div>
         </section>
@@ -41,7 +23,6 @@ if (!in_array($role, ['assetmanager', 'deptmanager'], true)) { header('Location:
             </form>
             <div id="change-result"></div>
         </section>
-    </main>
 <script>
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 let sectors=[];
@@ -55,5 +36,4 @@ function renderAssets(rows){document.getElementById('sector-assets').innerHTML=r
 document.getElementById('change-form').addEventListener('submit',async e=>{e.preventDefault(); const body=Object.fromEntries(new FormData(e.target)); const r=await fetch('api/admin_sectors.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)}); const p=await r.json(); document.getElementById('change-result').innerHTML=p.ok?'<div class="empty-state">異動已寫入 Auditlog。</div>':`<div class="error-box">${esc(p.error||JSON.stringify(p.errors))}</div>`; if(p.ok) loadSectors();});
 loadSectors().catch(e=>document.getElementById('sector-list').innerHTML=`<div class="error-box">${esc(e.message)}</div>`);
 </script>
-</body>
-</html>
+<?php backend_render_footer(); ?>

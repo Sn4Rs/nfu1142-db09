@@ -1,48 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+declare(strict_types=1);
 
-$role = strtolower((string)($_SESSION['employee_role'] ?? ''));
-if (empty($_SESSION['employee_id'])) {
-    header('Location: login.php');
-    exit;
-}
-if (!in_array($role, ['assetmanager', 'deptmanager'], true)) {
-    header('Location: index.php');
-    exit;
-}
+require_once __DIR__ . '/backend-common.php';
+require_once __DIR__ . '/backend-layout.php';
+backend_require_roles(['deptmanager', 'assetmanager']);
+
+backend_render_header('管理後台總覽', '核心 KPI、近期通知與後台待辦。');
 ?>
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理後台總覽 - 路邊電力資產管理系統</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <aside class="sidebar">
-        <h3>管理後台</h3>
-        <a href="admin_dashboard.php">後台總覽</a>
-        <a href="asset_map.php">資產地圖導覽</a>
-        <a href="admin_sector.php">饋線領地管理</a>
-        <a href="risk_warning.php">智慧預警中心</a>
-        <a href="stock_review.php">零件庫存審核</a>
-        <a href="assets.php">資產總表</a>
-        <a href="logout.php">登出</a>
-    </aside>
-
-    <main class="main admin-shell">
-        <header class="admin-header">
-            <div>
-                <h1>管理後台總覽</h1>
-                <p>目前身分：<?= htmlspecialchars((string)($_SESSION['employee_role'] ?? '')) ?> / <?= htmlspecialchars((string)($_SESSION['employee_name'] ?? '')) ?></p>
-            </div>
-            <a class="admin-button" href="asset_map.php">查看資產地圖</a>
-        </header>
-
-        <section class="kpi-grid" id="kpi-grid" aria-live="polite"></section>
+<section class="kpi-grid" id="kpi-grid" aria-live="polite"></section>
 
         <section class="admin-two-column">
             <div class="admin-panel">
@@ -54,9 +19,7 @@ if (!in_array($role, ['assetmanager', 'deptmanager'], true)) {
                 <div id="todo-list" class="stack-list"></div>
             </div>
         </section>
-    </main>
-
-    <script>
+<script>
         const kpiLabels = {
             active_assets: '全區資產',
             abnormal_todos: '今日異常待辦',
@@ -125,5 +88,4 @@ if (!in_array($role, ['assetmanager', 'deptmanager'], true)) {
             document.getElementById('kpi-grid').innerHTML = `<div class="error-box">${escapeHtml(error.message)}</div>`;
         });
     </script>
-</body>
-</html>
+<?php backend_render_footer(); ?>

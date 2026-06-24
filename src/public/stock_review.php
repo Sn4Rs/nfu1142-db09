@@ -1,15 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
-$role = strtolower((string)($_SESSION['employee_role'] ?? ''));
-if (empty($_SESSION['employee_id'])) { header('Location: login.php'); exit; }
-if (!in_array($role, ['assetmanager', 'deptmanager'], true)) { header('Location: index.php'); exit; }
+declare(strict_types=1);
+
+require_once __DIR__ . '/backend-common.php';
+require_once __DIR__ . '/backend-layout.php';
+backend_require_roles(['deptmanager', 'assetmanager']);
+
+backend_render_header('零件庫存與後台主管審核', '盤點耗材庫存，並簽核缺件/補貨申請。');
 ?>
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>零件庫存與後台主管審核</title><link rel="stylesheet" href="css/style.css"></head>
-<body>
-<aside class="sidebar admin-nav"><h3>管理後台</h3><a href="admin_dashboard.php">後台總覽</a><a href="asset_map.php">資產地圖導覽</a><a href="admin_sector.php">饋線領地管理</a><a href="risk_warning.php">智慧預警中心</a><a href="stock_review.php">零件庫存審核</a><a href="assets.php">資產總表</a><a href="logout.php">登出</a></aside>
-<main class="main admin-shell"><header class="admin-header"><div><h1>維護零件庫存與後台主管審核</h1><p>盤點耗材庫存，並簽核缺件/補貨申請。</p></div></header><div class="tab-bar"><button class="admin-button" data-tab="stock">耗材零件庫存盤點</button><button class="admin-button" data-tab="requests">後台主管審核收件匣</button></div><section class="admin-panel" id="stock-tab"><h2>庫存盤點</h2><div id="stock-list"></div></section><section class="admin-panel" id="requests-tab" style="display:none;"><h2>待審單據</h2><div id="request-list"></div></section></main>
+<div class="tab-bar"><button class="admin-button" data-tab="stock">耗材零件庫存盤點</button><button class="admin-button" data-tab="requests">後台主管審核收件匣</button></div><section class="admin-panel" id="stock-tab"><h2>庫存盤點</h2><div id="stock-list"></div></section><section class="admin-panel" id="requests-tab" style="display:none;"><h2>待審單據</h2><div id="request-list"></div></section>
 <script>
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 let payload={parts:[],requests:[]};
@@ -21,4 +19,4 @@ async function decide(requestId,decision){let reject_reason=''; if(decision==='�
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.getElementById('stock-tab').style.display=b.dataset.tab==='stock'?'block':'none';document.getElementById('requests-tab').style.display=b.dataset.tab==='requests'?'block':'none';});
 loadStock().catch(e=>document.getElementById('stock-list').innerHTML=`<div class="error-box">${esc(e.message)}</div>`);
 </script>
-</body></html>
+<?php backend_render_footer(); ?>
