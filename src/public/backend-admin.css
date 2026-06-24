@@ -10,6 +10,32 @@ a { color: inherit; }
 
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 245px minmax(0, 1fr); }
 .sidebar { background: #20252b; color: #fff; padding: 24px 16px; display: flex; flex-direction: column; }
+/* Keep the shared backend layout stable when legacy page styles are also loaded. */
+.app-shell > .sidebar {
+    position: static;
+    width: auto;
+    height: auto;
+    min-height: 100vh;
+}
+.app-shell > .sidebar .sidebar-heading {
+    margin: 0 0 18px;
+    padding: 0;
+    font-size: 22px;
+    color: #fff;
+}
+.app-shell > .sidebar .nav-link {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #e9ecef;
+    background: transparent;
+}
+.app-shell > .sidebar .nav-link:hover,
+.app-shell > .sidebar .nav-link.active {
+    background: #3b434c;
+    color: #fff;
+}
 .brand { display: flex; gap: 12px; align-items: center; color: #fff; text-decoration: none; padding: 8px 10px 22px; }
 .brand-icon { font-size: 30px; }
 .brand strong, .brand small { display: block; }

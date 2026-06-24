@@ -5,7 +5,7 @@ require_once __DIR__ . '/backend-common.php';
 require_once __DIR__ . '/backend-layout.php';
 backend_require_roles(['deptmanager', 'assetmanager']);
 
-backend_render_header('資產地圖導覽', '依供電領地與健康度篩選資產 Marker。');
+backend_render_header('資產地圖導覽', '依供電領地與健康度篩選資產 Marker。', true);
 ?>
 <form class="admin-filter-bar" id="map-filter">
             <label>供電領地

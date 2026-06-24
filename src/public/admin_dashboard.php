@@ -5,7 +5,7 @@ require_once __DIR__ . '/backend-common.php';
 require_once __DIR__ . '/backend-layout.php';
 backend_require_roles(['deptmanager', 'assetmanager']);
 
-backend_render_header('管理後台總覽', '核心 KPI、近期通知與後台待辦。');
+backend_render_header('管理後台總覽', '核心 KPI、近期通知與後台待辦。', true);
 ?>
 <section class="kpi-grid" id="kpi-grid" aria-live="polite"></section>
 

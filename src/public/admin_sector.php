@@ -5,7 +5,7 @@ require_once __DIR__ . '/backend-common.php';
 require_once __DIR__ . '/backend-layout.php';
 backend_require_roles(['deptmanager', 'assetmanager']);
 
-backend_render_header('饋線領地與設備異動管理', '管理分區資產，並對報廢或遷移分區寫入稽核紀錄。');
+backend_render_header('饋線領地與設備異動管理', '管理分區資產，並對報廢或遷移分區寫入稽核紀錄。', true);
 ?>
 <section class="asset-map-layout">
             <div class="admin-panel"><h2>供電領地列表</h2><div id="sector-list" class="stack-list"></div></div>

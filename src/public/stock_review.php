@@ -5,7 +5,7 @@ require_once __DIR__ . '/backend-common.php';
 require_once __DIR__ . '/backend-layout.php';
 backend_require_roles(['deptmanager', 'assetmanager']);
 
-backend_render_header('零件庫存與後台主管審核', '盤點耗材庫存，並簽核缺件/補貨申請。');
+backend_render_header('零件庫存與後台主管審核', '盤點耗材庫存，並簽核缺件/補貨申請。', true);
 ?>
 <div class="tab-bar"><button class="admin-button" data-tab="stock">耗材零件庫存盤點</button><button class="admin-button" data-tab="requests">後台主管審核收件匣</button></div><section class="admin-panel" id="stock-tab"><h2>庫存盤點</h2><div id="stock-list"></div></section><section class="admin-panel" id="requests-tab" style="display:none;"><h2>待審單據</h2><div id="request-list"></div></section>
 <script>

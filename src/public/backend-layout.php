@@ -33,7 +33,7 @@ function backend_original_nav_items(string $role): array
     };
 }
 
-function backend_render_header(string $title, string $description = ''): void
+function backend_render_header(string $title, string $description = '', bool $includeLegacyAdminStyles = false): void
 {
     backend_require_login();
     $user = backend_user();
@@ -46,7 +46,8 @@ function backend_render_header(string $title, string $description = ''): void
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= backend_e($title) ?>｜後端管理</title>
-    <link rel="stylesheet" href="backend-admin.css">
+    <?php if ($includeLegacyAdminStyles): ?><link rel="stylesheet" href="css/style.css?v=<?= filemtime(__DIR__ . '/css/style.css') ?>"><?php endif; ?>
+    <link rel="stylesheet" href="backend-admin.css?v=<?= filemtime(__DIR__ . '/backend-admin.css') ?>">
 </head>
 <body>
 <div class="app-shell">

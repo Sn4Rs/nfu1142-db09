@@ -5,7 +5,7 @@ require_once __DIR__ . '/backend-common.php';
 require_once __DIR__ . '/backend-layout.php';
 backend_require_roles(['deptmanager', 'assetmanager']);
 
-backend_render_header('智慧預警中心', '依最新巡檢風險分數與健康度列出高風險資產，並可一鍵派發維修工單。');
+backend_render_header('智慧預警中心', '依最新巡檢風險分數與健康度列出高風險資產，並可一鍵派發維修工單。', true);
 ?>
 <section class="admin-panel"><h2>高風險預警資產清單</h2><div id="risk-list"></div></section><section class="admin-panel"><h2>巡檢風險趨勢</h2><div id="trend-list" class="stack-list"><div class="empty-state">點選清單中的資產查看歷次巡檢趨勢。</div></div></section>
 <script>
