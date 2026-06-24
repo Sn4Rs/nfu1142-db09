@@ -8,7 +8,7 @@ if (!in_array($role, ['assetmanager', 'deptmanager'], true)) { header('Location:
 <html lang="zh-Hant">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>智慧預警中心</title><link rel="stylesheet" href="css/style.css"></head>
 <body>
-<aside class="sidebar admin-nav"><h3>管理後台</h3><a href="admin_dashboard.php">後台總覽</a><a href="asset_map.php">資產地圖導覽</a><a href="admin_sector.php">饋線領地管理</a><a href="risk_warning.php">智慧預警中心</a><a href="stock_review.php">零件庫存審核</a><a href="logout.php">登出</a></aside>
+<aside class="sidebar admin-nav"><h3>管理後台</h3><a href="admin_dashboard.php">後台總覽</a><a href="asset_map.php">資產地圖導覽</a><a href="admin_sector.php">饋線領地管理</a><a href="risk_warning.php">智慧預警中心</a><a href="stock_review.php">零件庫存審核</a><a href="assets.php">資產總表</a><a href="logout.php">登出</a></aside>
 <main class="main admin-shell"><header class="admin-header"><div><h1>智慧預警與汰換預測中心</h1><p>依最新巡檢風險分數與健康度列出高風險資產，並可一鍵派發維修工單。</p></div></header><section class="admin-panel"><h2>高風險預警資產清單</h2><div id="risk-list"></div></section><section class="admin-panel"><h2>巡檢風險趨勢</h2><div id="trend-list" class="stack-list"><div class="empty-state">點選清單中的資產查看歷次巡檢趨勢。</div></div></section></main>
 <script>
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
