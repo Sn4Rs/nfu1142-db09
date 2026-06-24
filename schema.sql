@@ -157,7 +157,12 @@ CREATE TABLE IF NOT EXISTS `Auditlog`(
   `audit_id` varchar(50) PRIMARY KEY NOT NULL comment '稽核紀錄編號',
   `employee_id` varchar(10) NOT NULL comment '操作人員',
   `function_name` varchar(100) NOT NULL comment '操作功能名稱',
-  `action_type` enum('新增','修改','刪除','簽核','登入','匯入') NOT NULL comment '操作類型'
+  `action_type` enum('新增','修改','刪除','簽核','登入','匯入') NOT NULL comment '操作類型',
+  `target_id` varchar(50) comment '異動資料主鍵',
+  `before_data` text comment '異動前內容(JSON)',
+  `after_data` text comment '異動後內容(JSON)',
+  `ip_address` varchar(45) comment '操作者IP',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() comment '操作時間'
 );
 
 CREATE TABLE IF NOT EXISTS `Importbatch`(
@@ -173,7 +178,10 @@ CREATE TABLE IF NOT EXISTS `Importbatch`(
 
 CREATE TABLE IF NOT EXISTS `Importerror`(
   `error_id` varchar(50) PRIMARY KEY NOT NULL comment '匯入錯誤編號',
-  `batch_id` varchar(50) NOT NULL comment '所屬匯入批次'
+  `batch_id` varchar(50) NOT NULL comment '所屬匯入批次',
+  `row_no` int NOT NULL DEFAULT 0 comment 'CSV原始列號',
+  `field_name` varchar(50) comment '錯誤欄位',
+  `error_message` text NOT NULL comment '錯誤原因'
 );
 
 

@@ -32,8 +32,8 @@ if (!empty($_SESSION['employee_id'])) {
         exit;
     }
 
-    // default logged-in homepage
-    header('Location: login.php');
+    // default logged-in homepage for asset managers and department managers
+    header('Location: admin_dashboard.php');
     exit;
 }
 

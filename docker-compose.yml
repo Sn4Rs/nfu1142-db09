@@ -12,7 +12,7 @@ services:
     networks:
       - stock-network
     environment:
-      - APACHE_DOCUMENT_ROOT=/var/www/html
+      - APACHE_DOCUMENT_ROOT=/var/www/html/src/public
 
   # 2. MariaDB 資料庫
   db-proj-db:
@@ -21,7 +21,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: myPotato
-      MYSQL_DATABASE: db-proj-db
+      MYSQL_DATABASE: csieDBTeam09
+      MYSQL_USER: potatoadmin
+      MYSQL_PASSWORD: mySmolPotato
     ports:
       - "3306:3306"
     volumes:
