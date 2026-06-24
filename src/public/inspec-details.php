@@ -95,6 +95,9 @@ if ($inspecId) {
     <a href="new-inspec.php">新增巡檢紀錄</a>
     <a href="inspec-history.php">巡檢歷史紀錄</a>
     <a href="photos.php">巡檢照片管理</a>
+        <!-- USER_BACKEND_ROLE_MENU_START -->
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+        <!-- USER_BACKEND_ROLE_MENU_END -->
 </aside>
 
     <div class="main">

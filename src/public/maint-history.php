@@ -65,6 +65,7 @@ $records = $stmt->fetchAll();
 ---------------------------- */
 $selectedRecord = null;
 $selectedPhotos = [];
+$selectedParts = [];
 
 if ($selectedRecordId) {
     foreach ($records as $r) {
@@ -83,6 +84,17 @@ if ($selectedRecordId) {
         ");
         $photoStmt->execute([$selectedRecordId]);
         $selectedPhotos = $photoStmt->fetchAll();
+
+        $partStmt = $pdo->prepare("
+            SELECT mp.part_id, ps.part_name, mp.qty_used, ps.unit_cost,
+                   (COALESCE(ps.unit_cost, 0) * mp.qty_used) AS subtotal
+            FROM Maintenanceparts mp
+            LEFT JOIN Partspecs ps ON ps.part_id = mp.part_id
+            WHERE mp.maint_id = ?
+            ORDER BY mp.part_id ASC
+        ");
+        $partStmt->execute([$selectedRecordId]);
+        $selectedParts = $partStmt->fetchAll();
     }
 }
 
@@ -345,6 +357,9 @@ foreach ($records as $r) {
             <a href="maint-todo.php">維修工作</a>
             <a href="parts-request.php">零件申請</a>
             <a href="schedule-maint.php">安排維修</a>
+        <!-- USER_BACKEND_ROLE_MENU_START -->
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+        <!-- USER_BACKEND_ROLE_MENU_END -->
         </aside>
         <main class="history-main">
             <div class="headerflex">
@@ -452,6 +467,33 @@ foreach ($records as $r) {
                     <span class="detail-label">狀態</span>
                     <?= htmlspecialchars($selectedRecord['status'] ?? '') ?>
                 </div>
+
+                <h3>消耗零件</h3>
+                <?php if (!empty($selectedParts)): ?>
+                    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+                        <thead>
+                            <tr>
+                                <th style="border:1px solid #ddd;padding:6px">零件</th>
+                                <th style="border:1px solid #ddd;padding:6px">數量</th>
+                                <th style="border:1px solid #ddd;padding:6px">小計</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($selectedParts as $part): ?>
+                                <tr>
+                                    <td style="border:1px solid #ddd;padding:6px">
+                                        <?= htmlspecialchars($part['part_id']) ?>
+                                        <?= !empty($part['part_name']) ? '－' . htmlspecialchars($part['part_name']) : '' ?>
+                                    </td>
+                                    <td style="border:1px solid #ddd;padding:6px"><?= (int) $part['qty_used'] ?></td>
+                                    <td style="border:1px solid #ddd;padding:6px">$<?= number_format((float) $part['subtotal'], 2) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <p class="empty-state">目前沒有零件消耗紀錄。</p>
+                <?php endif; ?>
 
                 <h3>照片</h3>
 

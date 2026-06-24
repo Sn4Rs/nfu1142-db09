@@ -1,185 +1,146 @@
 <?php
-require_once __DIR__ . '/../../vendor/autoload.php';
-use Dotenv\Dotenv;
+declare(strict_types=1);
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/backend-common.php';
+backend_require_roles(['technician', 'assetmanager', 'deptmanager']);
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
-$dotenv->load();
-
-if (empty($_SESSION['employee_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
-$employeeId = $_SESSION['employee_id'];
-$employeeRole = $_SESSION['employee_role'] ?? '';
-$isTechnician = stripos($employeeRole, 'technician') !== false;
-$isSupervisor = stripos($employeeRole, 'deptmanager') !== false || stripos($employeeRole, 'assetmanager') !== false;
-
-    $pdo = null;
-    $message = '';
-    $messageType = 'success';
-    $assets = [];
-    $selectedAssetId = '';
-    $action = '';
-    $details = '';
-    $scheduledTime = '';
-    $status = '缺件';
-$photoFiles = [];
+$pdo = backend_db();
+$user = backend_user();
+$message = '';
+$messageType = 'error';
+$maintId = trim((string) ($_POST['maint_id'] ?? $_GET['maint_id'] ?? ''));
+$maintenance = null;
+$parts = [];
 
 try {
-    $dsn = 'mysql:host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_NAME'] . ';port=' . $_ENV['DB_PORT'];
-    $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    $message = '資料庫連線失敗。';
-    $messageType = 'error';
-}
+    $parts = $pdo->query(
+        'SELECT part_id, part_name, stock, safe_stock FROM Partspecs ORDER BY part_id'
+    )->fetchAll();
 
-    // Load assets for dropdown
-    $assetStmt = $pdo->query('SELECT asset_id, sector_id, type, spec_id FROM Powerasset ORDER BY asset_id ASC');
-    $assets = $assetStmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($maintId !== '') {
+        $stmt = $pdo->prepare(
+            'SELECT m.maint_id, m.asset_id, m.technician_id, m.action, m.details,
+                    m.scheduled_time, m.status, p.type AS asset_type, p.sector_id
+             FROM Maintenancelog m
+             LEFT JOIN Powerasset p ON p.asset_id = m.asset_id
+             WHERE m.maint_id = ? LIMIT 1'
+        );
+        $stmt->execute([$maintId]);
+        $maintenance = $stmt->fetch();
 
-        // Load maint data if maint_id provided (after PDO is ready)
-        if (!empty($_GET['maint_id'])) {
-            $stmt = $pdo->prepare('SELECT asset_id, action, details, scheduled_time, status FROM Maintenancelog WHERE maint_id = ?');
-            $stmt->execute([$_GET['maint_id']]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) {
-                $selectedAssetId = $row['asset_id'];
-                $action = $row['action'];
-                $details = $row['details'];
-                $scheduledTime = $row['scheduled_time'];
-                $status = $row['status'];
-            }
+        if (!$maintenance) {
+            throw new RuntimeException('找不到指定的維修紀錄。');
         }
+        if ($user['role'] === 'technician' && (string) $maintenance['technician_id'] !== $user['id']) {
+            http_response_code(403);
+            exit('403 權限不足：只能替自己的維修工作申請零件。');
+        }
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // These fields are not used in parts request; keep for compatibility
-        $selectedAssetId = trim($_POST['asset_id'] ?? '');
-        $action = trim($_POST['action'] ?? '');
-        $details = trim($_POST['details'] ?? '');
-        $scheduledTime = trim($_POST['scheduled_time'] ?? '');
-        $status = trim($_POST['status'] ?? '完成');
+        backend_verify_csrf();
+        if (!$maintenance) {
+            throw new RuntimeException('請先選擇維修紀錄。');
+        }
 
-        // Basic validation for parts request
-        $maintId = trim($_POST['maint_id'] ?? '');
         $partIds = $_POST['part_id'] ?? [];
-        $reqQtys = $_POST['req_qty'] ?? [];
-        // Validate each part entry
-        $invalidParts = [];
-        foreach ($partIds as $idx => $pid) {
-            $qty = $reqQtys[$idx] ?? '';
-            if ($pid === '' || !is_string($pid)) {
-                $invalidParts[] = "零件欄位第 {$idx} 位置必須為文字";
-            }
-            if ($qty === '' || !is_numeric($qty) || (int)$qty <= 0) {
-                $invalidParts[] = "數量欄位第 {$idx} 位置必須為正整數";
-            }
+        $quantities = $_POST['req_qty'] ?? [];
+        if (!is_array($partIds) || !is_array($quantities)) {
+            throw new RuntimeException('零件資料格式錯誤。');
         }
-        if ($maintId === '' || empty($partIds) || empty($reqQtys) || !empty($invalidParts)) {
-            $message = '請填寫所有必填欄位。';
-        }
-            if (!empty($invalidParts)) {
-                $message .= ' ' . implode(' ', $invalidParts);
+
+        $requestLines = [];
+        $partCheck = $pdo->prepare('SELECT part_id, part_name FROM Partspecs WHERE part_id = ?');
+        foreach ($partIds as $index => $partIdValue) {
+            $partId = trim((string) $partIdValue);
+            $quantity = (int) ($quantities[$index] ?? 0);
+            if ($partId === '' && $quantity === 0) {
+                continue;
             }
-            $messageType = 'error';
-        } else {
-                $pdo->beginTransaction();
-                try {
-                    // Insert parts request record
-                    $requestId = 'PR' . date('YmdHis') . random_int(100, 999);
-                    $requestTime = date('Y-m-d H:i:s');
-                    $insertPartsStmt = $pdo->prepare(
-                        'INSERT INTO Partsrequest (request_id, maint_id, technician_id, status, request_time) VALUES (?, ?, ?, ?, ?)'
-                    );
-                    $insertPartsStmt->execute([
-                        $requestId,
-                        $maintId,
-                        $employeeId,
-                        '待審',
-                        $requestTime,
-                    ]);
-                        // Insert each part line
-                        $insertReqStmt = $pdo->prepare(
-                            'INSERT INTO Req_part (request_id, part_id, req_qty, status) VALUES (?, ?, ?, ?)'
-                        );
-                        foreach ($partIds as $idx => $pid) {
-                            $qty = $reqQtys[$idx] ?? 1;
-                            $insertReqStmt->execute([
-                                $requestId,
-                                $pid,
-                                $qty,
-                                '待審',
-                            ]);
-                        }
+            if ($partId === '' || $quantity <= 0) {
+                throw new RuntimeException('每一項零件都必須填寫零件編號與正整數數量。');
+            }
+            $partCheck->execute([$partId]);
+            $part = $partCheck->fetch();
+            if (!$part) {
+                throw new RuntimeException('零件編號不存在：' . $partId);
+            }
+            $requestLines[$partId] = [
+                'part_id' => $partId,
+                'part_name' => (string) ($part['part_name'] ?? $partId),
+                'qty' => ($requestLines[$partId]['qty'] ?? 0) + $quantity,
+            ];
+        }
 
-                        // Handle photo uploads
-                        $uploadDir = __DIR__ . '/uploads/maintenance';
-                        if (!is_dir($uploadDir)) {
-                            mkdir($uploadDir, 0777, true);
-                        }
+        if ($requestLines === []) {
+            throw new RuntimeException('請至少新增一項缺少零件。');
+        }
 
-                        if (!empty($_FILES['photos']) && isset($_FILES['photos']['name']) && is_array($_FILES['photos']['name'])) {
-                            $fileCount = count($_FILES['photos']['name']);
-                            for ($i = 0; $i < $fileCount; $i++) {
-                                if ($_FILES['photos']['error'][$i] !== UPLOAD_ERR_OK || $_FILES['photos']['name'][$i] === '') {
-                                    continue;
-                                }
-                                $originalName = basename($_FILES['photos']['name'][$i]);
-                                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-                                $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
-                                $storedName = $safeName . '_' . uniqid('', true) . ($extension !== '' ? '.' . $extension : '');
-                                $storedPath = $uploadDir . '/' . $storedName;
-                                if (move_uploaded_file($_FILES['photos']['tmp_name'][$i], $storedPath)) {
-                                    $photoId = 'PH' . date('YmdHis') . random_int(100, 999) . $i;
-                                    $relativePath = 'uploads/maintenance/' . $storedName;
-                                    $photoStmt = $pdo->prepare(
-                                        'INSERT INTO Photos (photo_id, asset_id, maint_id, url, filename, uploaded_by, uploaded_at, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, 0)'
-                                    );
-                                    $photoStmt->execute([
-                                        $photoId,
-                                        $selectedAssetId,
-                                        $maintId,
-                                        $relativePath,
-                                        $originalName,
-                                        $employeeId,
-                                        $maintTime,
-                                    ]);
-                                }
-                            }
-                        }
+        $pendingCheck = $pdo->prepare(
+            "SELECT request_id FROM Partsrequest WHERE maint_id = ? AND status = '待審' LIMIT 1"
+        );
+        $pendingCheck->execute([$maintId]);
+        $pendingRequestId = $pendingCheck->fetchColumn();
+        if ($pendingRequestId) {
+            throw new RuntimeException('此維修工作已有待審中的零件申請：' . $pendingRequestId);
+        }
 
-                        // Update status of the associated Maintenancelog to '缺件'
-                        $updateStmt = $pdo->prepare(
-                            'UPDATE Maintenancelog SET status = ?, approved_by = ?, approved_at = ? WHERE maint_id = ?'
-                        );
-                        $updateStmt->execute(['缺件', $employeeId, date('Y-m-d H:i:s'), $maintId]);
+        $pdo->beginTransaction();
+        $requestId = 'PR' . date('YmdHis') . random_int(100, 999);
+        $stmt = $pdo->prepare(
+            'INSERT INTO Partsrequest
+             (request_id, maint_id, technician_id, status, request_time)
+             VALUES (?, ?, ?, ?, NOW())'
+        );
+        $stmt->execute([$requestId, $maintId, (string) $maintenance['technician_id'], '待審']);
 
-                        $pdo->commit();
-                        $message = '零件申請已建立，維修紀錄已標記為缺件，請等待審核。';
-                        $messageType = 'success';
+        $lineStmt = $pdo->prepare(
+            'INSERT INTO Req_part (request_id, part_id, req_qty, status) VALUES (?, ?, ?, ?)'
+        );
+        foreach ($requestLines as $line) {
+            $lineStmt->execute([$requestId, $line['part_id'], $line['qty'], '待審']);
+        }
 
-                        // Reset form
-                        $selectedAssetId = '';
-                        $action = '';
-                        $details = '';
-                        $scheduledTime = '';
-                        $status = '完成';
-                    } catch (Throwable $e) {
-                        if ($pdo->inTransaction()) {
-                            $pdo->rollBack();
-                        }
-                        // Append exception message for debugging (remove in prod)
-                        $message = '建立失敗，請稍後再試。 ' . $e->getMessage();
-                        $messageType = 'error';
-                    }
-    foreach ($assets as $asset) {
-        $assetsById[$asset['asset_id']] = $asset;
+        $pdo->prepare('UPDATE Maintenancelog SET status = ? WHERE maint_id = ?')
+            ->execute(['缺件', $maintId]);
+
+        $receivers = $pdo->query(
+            "SELECT id_num, role FROM Employees
+             WHERE status = 'active' AND role IN ('assetmanager','deptmanager')"
+        )->fetchAll();
+        $notify = $pdo->prepare(
+            'INSERT INTO Notification
+             (notification_id, receiver_id, receiver_role, source_type, source_id,
+              title, content, is_read, created_at, read_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW(), NULL)'
+        );
+        foreach ($receivers as $receiver) {
+            $notify->execute([
+                'NTF' . date('YmdHis') . random_int(1000, 9999),
+                $receiver['id_num'],
+                $receiver['role'],
+                '零件申請',
+                $requestId,
+                '新的維修缺件申請',
+                '維修單 ' . $maintId . ' 已送出缺件申請，共 ' . count($requestLines) . ' 種零件。',
+            ]);
+        }
+
+        $pdo->commit();
+        backend_audit('維修缺件申請', '新增', 'Partsrequest', $requestId, null, [
+            'maint_id' => $maintId,
+            'parts' => array_values($requestLines),
+        ]);
+        $_SESSION['flash_message'] = '零件申請已送出，維修工作已標記為缺件。';
+        $_SESSION['flash_type'] = 'success';
+        header('Location: parts-request.php');
+        exit;
     }
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    $message = $e->getMessage();
 }
 ?>
 <!DOCTYPE html>
@@ -187,81 +148,73 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>維修排程 - 路邊電力資產管理系統</title>
+    <title>新增零件申請 - 路邊電力資產管理系統</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .page-card {border:1px solid #ddd;border-radius:8px;padding:18px;background:#fff;}
-        .report-form{display:grid;gap:16px;}
-        .form-row{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start;}
-        .form-row label{font-weight:700;padding-top:8px;}
-        .form-row input[type="text"],.form-row input[type="datetime-local"],.form-row textarea,.form-row select{width:100%;box-sizing:border-box;border:1px solid #bbb;border-radius:4px;padding:8px 10px;font-size:16px;background:#fff;}
-        .form-row textarea{min-height:120px;}
-        .photo-list{display:grid;gap:8px;margin-top:8px;}
-        .photo-row{display:flex;gap:8px;align-items:center;}
-        .photo-row input{flex:1;}
-        .small-button{padding:4px 8px;font-size:12px;}
+        .main{margin-left:210px;padding:20px}.page-card{border:1px solid #ddd;border-radius:8px;padding:18px;background:#fff;max-width:900px}
+        .summary{background:#f8f9fa;border-radius:6px;padding:14px;margin-bottom:18px}.summary div{margin:5px 0}
+        .part-row{display:grid;grid-template-columns:1fr 160px auto;gap:10px;margin-bottom:10px;align-items:center}
+        input,button{padding:9px;font-size:15px}button{cursor:pointer}.error{color:#a40000;background:#ffecec;padding:12px;border-radius:6px}
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h3>導覽列</h3>
-        <a href="maintenances.php">首頁</a>
-        <a href="assets.php">資產清單</a>
-        <a href="index.php#powerasset-search">饋線區</a>
-        <a href="maint-history.php">維修紀錄</a>
-        <a href="maint-todo.php">維修工作</a>
-        <a href="parts-request.php">零件申請</a>
-        <a href="schedule-maint.php">維修排程</a>
-    </div>
-    <div class="main">
-        <div class="headerflex"><h1>新增缺件申請</h1></div>
-        <?php if ($message): ?>
-            <p class="<?= $messageType ?>"><?= htmlspecialchars($message) ?></p>
-        <?php endif; ?>
-        <div class="page-card">
-            <h3>維修紀錄摘要</h3>
-            <div class="detail-card">
-                <div class="detail-row"><strong>資產:</strong> <?= htmlspecialchars($selectedAssetId) ?></div>
-                <div class="detail-row"><strong>動作:</strong> <?= htmlspecialchars($action) ?></div>
-                <div class="detail-row"><strong>細節:</strong> <?= nl2br(htmlspecialchars($details)) ?></div>
-                <div class="detail-row"><strong>排定時間:</strong> <?= htmlspecialchars($scheduledTime) ?></div>
-                <div class="detail-row"><strong>狀態:</strong> <?= htmlspecialchars($status) ?></div>
-            </div>
-            <h3>零件申請</h3>
-            <form class="report-form" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="maint_id" value="<?= htmlspecialchars($_GET['maint_id'] ?? '') ?>">
-                <div id="parts-container">
-                    <div class="form-row part-row">
-                        <label for="part_id_0">零件ID<a href="parts-list.php"> 零件總表</a></label>
-                        <input type="text" id="part_id_0" name="part_id[]" required>
-                        
-                        <label for="req_qty_0">數量</label>
-                        <input type="number" id="req_qty_0" name="req_qty[]" min="1" required>
-                    </div>
-                </div>
-                <div class="form-row"><button type="button" id="add-part-btn" class="secondary-button">新增零件</button></div>
-                <input type="hidden" name="part_status" value="待審">
-                <div class="form-row"><button type="submit" class="primary-button">提交零件申請</button></div>
-            </form>
+<div class="sidebar">
+    <h3>導覽列</h3>
+    <a href="maintenances.php">首頁</a>
+    <a href="assets.php">資產清單</a>
+    <a href="index.php#powerasset-search">饋線區</a>
+    <a href="maint-history.php">維修紀錄</a>
+    <a href="maint-todo.php">維修工作</a>
+    <a href="parts-request.php">零件申請</a>
+    <a href="schedule-maint.php">維修排程</a>
+    <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
+</div>
+<div class="main">
+    <h1>新增缺件申請</h1>
+    <?php if ($message !== ''): ?><p class="error"><?= backend_e($message) ?></p><?php endif; ?>
+
+    <?php if ($maintenance): ?>
+    <div class="page-card">
+        <div class="summary">
+            <div><strong>維修編號：</strong><?= backend_e($maintenance['maint_id']) ?></div>
+            <div><strong>資產：</strong><?= backend_e($maintenance['asset_id'] . ' ' . ($maintenance['asset_type'] ?? '')) ?></div>
+            <div><strong>饋線區：</strong><?= backend_e($maintenance['sector_id'] ?? '') ?></div>
+            <div><strong>維修項目：</strong><?= nl2br(backend_e($maintenance['action'])) ?></div>
+            <div><strong>排定時間：</strong><?= backend_e($maintenance['scheduled_time']) ?></div>
         </div>
+
+        <form method="post">
+            <?= backend_csrf_field() ?>
+            <input type="hidden" name="maint_id" value="<?= backend_e($maintId) ?>">
+            <datalist id="parts-options">
+                <?php foreach ($parts as $part): ?>
+                    <option value="<?= backend_e($part['part_id']) ?>"><?= backend_e(($part['part_name'] ?? '') . '／庫存 ' . ($part['stock'] ?? 0)) ?></option>
+                <?php endforeach; ?>
+            </datalist>
+            <div id="parts-container">
+                <div class="part-row">
+                    <input name="part_id[]" list="parts-options" placeholder="零件編號" required>
+                    <input name="req_qty[]" type="number" min="1" placeholder="數量" required>
+                    <button type="button" onclick="this.parentElement.remove()">刪除</button>
+                </div>
+            </div>
+            <p><button type="button" id="add-part">新增零件</button></p>
+            <p><button type="submit">送出申請</button> <a href="maint-todo.php">返回</a></p>
+        </form>
     </div>
-    <script>
-        const addPartBtn = document.getElementById('add-part-btn');
-        const partsContainer = document.getElementById('parts-container');
-        let partIndex = 1;
-        addPartBtn.addEventListener('click', () => {
-            const row = document.createElement('div');
-            row.className = 'form-row part-row';
-            row.innerHTML = `
-                <label for="part_id_${partIndex}">零件</label>
-                <input type="text" id="part_id_${partIndex}" name="part_id[]" required>
-                <label for="req_qty_${partIndex}">數量</label>
-                <input type="number" id="req_qty_${partIndex}" name="req_qty[]" min="1" required>
-                <button type="button" class="small-button" onclick="this.parentElement.remove();">刪除</button>
-            `;
-            partsContainer.appendChild(row);
-            partIndex++;
-        });
-    </script>
+    <?php else: ?>
+        <p>請從維修工作或維修紀錄選擇一筆工作後，再建立缺件申請。</p>
+    <?php endif; ?>
+</div>
+<script>
+document.getElementById('add-part')?.addEventListener('click', () => {
+    const row = document.createElement('div');
+    row.className = 'part-row';
+    row.innerHTML = '<input name="part_id[]" list="parts-options" placeholder="零件編號" required>' +
+        '<input name="req_qty[]" type="number" min="1" placeholder="數量" required>' +
+        '<button type="button" onclick="this.parentElement.remove()">刪除</button>';
+    document.getElementById('parts-container').appendChild(row);
+});
+</script>
 </body>
 </html>

@@ -12,19 +12,27 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
 $loginError = '';
+function login_home_for_role(string $role): string
+{
+    $role = strtolower(trim($role));
+
+    if (str_contains($role, 'inspector')) {
+        return 'inspections.php';
+    }
+    if (str_contains($role, 'technician')) {
+        return 'maintenances.php';
+    }
+    if (str_contains($role, 'assetmanager') || str_contains($role, 'deptmanager')) {
+        return 'backend-management.php';
+    }
+
+    return 'index.php';
+}
+
 
 if (!empty($_SESSION['employee_id'])) {
-	if (stripos((string) ($_SESSION['employee_role'] ?? ''), 'inspector') !== false) {
-		header('Location: inspections.php');
-		exit;
-	}
-	else if (stripos((string) ($_SESSION['employee_role'] ?? ''), 'technician') !== false) {
-		header('Location: inspections.php');
-		exit;
-	}
-
-	else header('Location: index.php');
-	exit;
+    header('Location: ' . login_home_for_role((string) ($_SESSION['employee_role'] ?? '')));
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -63,19 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$_SESSION['employee_name'] = $employee['fullname'];
 				$_SESSION['employee_role'] = $employee['role'];
 				$_SESSION['employee_account'] = $employee['account'];
-
-                // Redirect based on role
-				if (stripos((string) $employee['role'], 'inspector') !== false) {
-					header('Location: inspections.php');
-				} 
-                else if (stripos((string) $employee['role'], 'technician') !== false) {
-					header('Location: maintenances.php');
-				}
-                else 
-                {
-                    header('Location: index.php');
-                }
-				exit;
+                header('Location: ' . login_home_for_role((string) $employee['role']));
+                exit;
 			}
 
 			$loginError = '帳號或密碼錯誤。';

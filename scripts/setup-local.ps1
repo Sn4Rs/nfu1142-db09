@@ -3,6 +3,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = $OutputEncoding
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
 function Invoke-DockerCompose {
@@ -47,7 +49,7 @@ if ($LASTEXITCODE -ne 0) {
 if (Test-Path 'migrations') {
     Get-ChildItem 'migrations' -Filter '*.sql' | Sort-Object Name | ForEach-Object {
         Write-Host ('套用 migration: ' + $_.Name)
-        Get-Content $_.FullName | docker exec -i db09-db mariadb -uroot -pmyPotato csieDBTeam09
+        Get-Content -Encoding UTF8 $_.FullName | docker exec -i db09-db mariadb --default-character-set=utf8mb4 -uroot -pmyPotato csieDBTeam09
     }
 }
 

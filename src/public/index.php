@@ -19,22 +19,20 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!empty($_SESSION['employee_id'])) {
-
-    $role = strtolower($_SESSION['employee_role'] ?? '');
+    $role = strtolower((string) ($_SESSION['employee_role'] ?? ''));
 
     if (str_contains($role, 'inspector')) {
         header('Location: inspections.php');
         exit;
     }
-
     if (str_contains($role, 'technician')) {
         header('Location: maintenances.php');
         exit;
     }
-
-    // default logged-in homepage for asset managers and department managers
-    header('Location: admin_dashboard.php');
-    exit;
+    if (str_contains($role, 'assetmanager') || str_contains($role, 'deptmanager')) {
+        header('Location: backend-management.php');
+        exit;
+    }
 }
 
 $searchTerm = trim($_GET['q'] ?? '');

@@ -102,7 +102,7 @@ function table_columns(PDO $pdo, string $tableName): array
 function ensure_admin_module3_schema(PDO $pdo): void
 {
     $auditColumns = table_columns($pdo, 'Auditlog');
-    $requiredAuditColumns = ['target_id', 'before_data', 'after_data', 'ip_address', 'created_at'];
+    $requiredAuditColumns = ['target_type', 'target_id', 'old_data', 'new_data', 'before_data', 'after_data', 'ip_address', 'result', 'created_at'];
     $missingAudit = array_values(array_diff($requiredAuditColumns, $auditColumns));
 
     $errorColumns = table_columns($pdo, 'Importerror');
@@ -130,11 +130,14 @@ function write_audit(
     ?array $beforeData = null,
     ?array $afterData = null
 ): void {
+    $beforeJson = $beforeData === null ? null : json_encode($beforeData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $afterJson = $afterData === null ? null : json_encode($afterData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
     $stmt = $pdo->prepare(
         'INSERT INTO Auditlog
-        (audit_id, employee_id, function_name, action_type, target_id, before_data, after_data, ip_address, created_at)
+        (audit_id, employee_id, function_name, action_type, target_type, target_id, old_data, new_data, before_data, after_data, ip_address, result, created_at)
         VALUES
-        (:audit_id, :employee_id, :function_name, :action_type, :target_id, :before_data, :after_data, :ip_address, NOW())'
+        (:audit_id, :employee_id, :function_name, :action_type, :target_type, :target_id, :old_data, :new_data, :before_data, :after_data, :ip_address, :result, NOW())'
     );
 
     $stmt->execute([
@@ -142,10 +145,14 @@ function write_audit(
         'employee_id' => current_employee_id(),
         'function_name' => $functionName,
         'action_type' => $actionType,
+        'target_type' => $functionName,
         'target_id' => $targetId,
-        'before_data' => $beforeData === null ? null : json_encode($beforeData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        'after_data' => $afterData === null ? null : json_encode($afterData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        'old_data' => $beforeJson,
+        'new_data' => $afterJson,
+        'before_data' => $beforeJson,
+        'after_data' => $afterJson,
         'ip_address' => client_ip(),
+        'result' => '成功',
     ]);
 }
 

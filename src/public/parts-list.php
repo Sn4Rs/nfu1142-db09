@@ -33,7 +33,7 @@ $parts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>零件總表</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/style.css">
     <style>
         table {width:100%;border-collapse:collapse;}
         th,td{border:1px solid #ddd;padding:8px;text-align:left;}
@@ -43,13 +43,14 @@ $parts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="sidebar">
         <h3>導覽列</h3>
-        <a href="../maintenances.php">首頁</a>
-        <a href="../assets.php">資產清單</a>
-        <a href="../index.php#powerasset-search">饋線區</a>
-        <a href="../maint-history.php">維修紀錄</a>
-        <a href="../maint-todo.php">維修工作</a>
-        <a href="../parts-request.php">零件申請</a>
-        <a href="../schedule-maint.php">維修排程</a>
+        <a href="maintenances.php">首頁</a>
+        <a href="assets.php">資產清單</a>
+        <a href="index.php#powerasset-search">饋線區</a>
+        <a href="maint-history.php">維修紀錄</a>
+        <a href="maint-todo.php">維修工作</a>
+        <a href="parts-request.php">零件申請</a>
+        <a href="schedule-maint.php">維修排程</a>
+        <?php require_once __DIR__ . '/backend-menu.php'; backend_render_menu(); ?>
     </div>
     <div class="main">
         <h1>零件總表</h1>
