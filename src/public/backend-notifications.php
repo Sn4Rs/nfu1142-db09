@@ -7,6 +7,7 @@ backend_require_roles(['deptmanager', 'assetmanager', 'inspector', 'technician']
 
 $pdo = backend_db();
 $user = backend_user();
+$canViewAllNotifications = in_array($user['role'], ['assetmanager', 'deptmanager'], true);
 
 function backend_notification_link(array $row): string
 {
@@ -15,7 +16,7 @@ function backend_notification_link(array $row): string
 
     return match ($type) {
         '巡檢', '巡檢任務' => '/inspec-history.php?record_id=' . $id,
-        '維修', '維修工單' => '/maint-history.php?record_id=' . $id,
+        '維修', '維修工單', 'AI預警派工' => '/maint-history.php?record_id=' . $id,
         '缺件', '零件申請' => '/parts-request.php',
         '補貨提醒' => '/backend-stock-alert.php',
         default => '/backend-management.php',
@@ -29,18 +30,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if ($action === 'read_one') {
             $id = trim((string)($_POST['notification_id'] ?? ''));
-            $stmt = $pdo->prepare(
-                'UPDATE Notification SET is_read = 1, read_at = NOW()
-                 WHERE notification_id = ? AND (receiver_id = ? OR receiver_role = ?)'
-            );
-            $stmt->execute([$id, $user['id'], $user['role']]);
+            if ($canViewAllNotifications) {
+                $stmt = $pdo->prepare('UPDATE Notification SET is_read = 1, read_at = NOW() WHERE notification_id = ?');
+                $stmt->execute([$id]);
+            } else {
+                $stmt = $pdo->prepare(
+                    'UPDATE Notification SET is_read = 1, read_at = NOW()
+                     WHERE notification_id = ? AND (receiver_id = ? OR receiver_role = ?)'
+                );
+                $stmt->execute([$id, $user['id'], $user['role']]);
+            }
             backend_audit('待辦事項與角色通知', '修改', 'Notification', $id, ['is_read' => 0], ['is_read' => 1]);
         } elseif ($action === 'read_all') {
-            $stmt = $pdo->prepare(
-                'UPDATE Notification SET is_read = 1, read_at = NOW()
-                 WHERE is_read = 0 AND (receiver_id = ? OR receiver_role = ?)'
-            );
-            $stmt->execute([$user['id'], $user['role']]);
+            if ($canViewAllNotifications) {
+                $stmt = $pdo->prepare('UPDATE Notification SET is_read = 1, read_at = NOW() WHERE is_read = 0');
+                $stmt->execute();
+            } else {
+                $stmt = $pdo->prepare(
+                    'UPDATE Notification SET is_read = 1, read_at = NOW()
+                     WHERE is_read = 0 AND (receiver_id = ? OR receiver_role = ?)'
+                );
+                $stmt->execute([$user['id'], $user['role']]);
+            }
             backend_audit('待辦事項與角色通知', '修改', 'Notification', 'ALL', null, ['marked_read' => $stmt->rowCount()]);
             backend_flash('success', '已將所有通知標記為已讀。');
         }
@@ -52,35 +63,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $status = (string)($_GET['status'] ?? 'all');
-$where = ['(receiver_id = ? OR receiver_role = ?)'];
-$params = [$user['id'], $user['role']];
+$where = [];
+$params = [];
+if (!$canViewAllNotifications) {
+    $where[] = '(receiver_id = ? OR receiver_role = ?)';
+    $params = [$user['id'], $user['role']];
+}
 if ($status === 'unread') {
     $where[] = 'is_read = 0';
 } elseif ($status === 'read') {
     $where[] = 'is_read = 1';
 }
+$whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $stmt = $pdo->prepare(
-    'SELECT * FROM Notification WHERE ' . implode(' AND ', $where) . '
+    'SELECT * FROM Notification ' . $whereSql . '
      ORDER BY is_read ASC, created_at DESC LIMIT 200'
 );
 $stmt->execute($params);
 $notifications = $stmt->fetchAll();
 
-$countStmt = $pdo->prepare(
-    'SELECT SUM(is_read = 0) AS unread_count, SUM(is_read = 1) AS read_count, COUNT(*) AS total_count
-     FROM Notification WHERE receiver_id = ? OR receiver_role = ?'
-);
-$countStmt->execute([$user['id'], $user['role']]);
-$counts = $countStmt->fetch() ?: ['unread_count' => 0, 'read_count' => 0, 'total_count' => 0];
+if ($canViewAllNotifications) {
+    $countStmt = $pdo->query(
+        'SELECT SUM(is_read = 0) AS unread_count, SUM(is_read = 1) AS read_count, COUNT(*) AS total_count
+         FROM Notification'
+    );
+    $counts = $countStmt->fetch() ?: ['unread_count' => 0, 'read_count' => 0, 'total_count' => 0];
+} else {
+    $countStmt = $pdo->prepare(
+        'SELECT SUM(is_read = 0) AS unread_count, SUM(is_read = 1) AS read_count, COUNT(*) AS total_count
+         FROM Notification WHERE receiver_id = ? OR receiver_role = ?'
+    );
+    $countStmt->execute([$user['id'], $user['role']]);
+    $counts = $countStmt->fetch() ?: ['unread_count' => 0, 'read_count' => 0, 'total_count' => 0];
+}
 
-backend_render_header('待辦事項與角色通知', '依登入身分顯示巡檢、維修、缺件、補貨與主管簽核通知。');
+backend_render_header('待辦事項與角色通知', $canViewAllNotifications ? '主管與資產管理員可查看全部通知與派工狀態。' : '依登入身分顯示巡檢、維修、缺件、補貨與主管簽核通知。');
 ?>
 
 <div class="grid grid-3">
-    <article class="card"><div class="metric-label">全部通知</div><div class="metric"><?= (int)$counts['total_count'] ?></div></article>
-    <article class="card"><div class="metric-label">未讀</div><div class="metric"><?= (int)$counts['unread_count'] ?></div></article>
-    <article class="card"><div class="metric-label">已讀</div><div class="metric"><?= (int)$counts['read_count'] ?></div></article>
+    <article class="card"><div class="metric-label">全部通知</div><div class="metric"><?= (int)($counts['total_count'] ?? 0) ?></div></article>
+    <article class="card"><div class="metric-label">未讀</div><div class="metric"><?= (int)($counts['unread_count'] ?? 0) ?></div></article>
+    <article class="card"><div class="metric-label">已讀</div><div class="metric"><?= (int)($counts['read_count'] ?? 0) ?></div></article>
 </div>
 
 <article class="card" style="margin-top:18px">
@@ -97,7 +121,7 @@ backend_render_header('待辦事項與角色通知', '依登入身分顯示巡�
 
     <div class="table-wrap">
         <table>
-            <thead><tr><th>狀態</th><th>來源</th><th>標題</th><th>內容</th><th>建立時間</th><th>操作</th></tr></thead>
+            <thead><tr><th>狀態</th><th>接收者</th><th>來源</th><th>標題</th><th>內容</th><th>建立時間</th><th>操作</th></tr></thead>
             <tbody>
             <?php foreach ($notifications as $row): ?>
                 <tr>
@@ -106,6 +130,7 @@ backend_render_header('待辦事項與角色通知', '依登入身分顯示巡�
                             <?= (int)$row['is_read'] === 1 ? '已讀' : '未讀' ?>
                         </span>
                     </td>
+                    <td><?= backend_e(($row['receiver_id'] ?? '') . ' / ' . ($row['receiver_role'] ?? '')) ?></td>
                     <td><?= backend_e($row['source_type']) ?></td>
                     <td><?= backend_e($row['title']) ?></td>
                     <td><?= backend_e($row['content']) ?></td>
@@ -123,7 +148,7 @@ backend_render_header('待辦事項與角色通知', '依登入身分顯示巡�
                     </td>
                 </tr>
             <?php endforeach; ?>
-            <?php if (!$notifications): ?><tr><td colspan="6" class="empty">目前沒有通知。</td></tr><?php endif; ?>
+            <?php if (!$notifications): ?><tr><td colspan="7" class="empty">目前沒有通知。</td></tr><?php endif; ?>
             </tbody>
         </table>
     </div>
