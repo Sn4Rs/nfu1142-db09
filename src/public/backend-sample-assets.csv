@@ -1,0 +1,3 @@
+asset_id,sector_id,type,spec_id,install_date,current_status,health_level,expected_lifespan
+ASSET901,SEC-01,電塔,SPEC-TR-01,2026-06-01,運作中,良,30
+ASSET902,SEC-02,電線桿,SPEC-PL-01,2026-06-02,維修中,待修,25

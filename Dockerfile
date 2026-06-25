@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     libmariadb-dev \
     && rm -rf /var/lib/apt/lists/*
 
+
 # 3. 安裝 PHP 擴展 (連線資料庫必備)
 # mysqli 是傳統寫法，pdo_mysql 是現代物件導向寫法，建議兩者都裝
 RUN docker-php-ext-install mysqli pdo pdo_mysql
@@ -30,3 +31,19 @@ WORKDIR /var/www/html
 
 # 6. 修改權限，確保 Apache 有權限讀取掛載的檔案
 RUN chown -R www-data:www-data /var/www/html
+
+# 設定照片上傳限制
+RUN printf "file_uploads=On\nupload_max_filesize=10M\npost_max_size=12M\nmax_file_uploads=20\n" \
+    > /usr/local/etc/php/conf.d/uploads.ini
+
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/src/public
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf \
+    /etc/apache2/apache2.conf \
+    /etc/apache2/conf-available/*.conf
+
+WORKDIR /var/www/html
+
+CMD ["sh", "-c", "mkdir -p /var/www/html/src/public/uploads/inspection && chown -R www-data:www-data /var/www/html/src/public/uploads && chmod -R 775 /var/www/html/src/public/uploads && apache2-foreground"]
+
