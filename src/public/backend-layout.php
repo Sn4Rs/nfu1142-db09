@@ -66,11 +66,9 @@ function backend_render_header(string $title, string $description = '', bool $in
                 <?php endif; ?>
             <?php endforeach; ?>
         </nav>
-
         <div class="sidebar-bottom">
             <strong><?= backend_e($user['name']) ?></strong>
             <span><?= backend_e(backend_role_label($user['role'])) ?></span>
-            <a href="logout.php">登出</a>
         </div>
     </aside>
 
@@ -80,9 +78,12 @@ function backend_render_header(string $title, string $description = '', bool $in
                 <h1><?= backend_e($title) ?></h1>
                 <?php if ($description !== ''): ?><p><?= backend_e($description) ?></p><?php endif; ?>
             </div>
-            <div class="identity-card">
-                <span>目前身分</span>
-                <strong><?= backend_e(backend_role_label($user['role'])) ?></strong>
+            <div class="page-header-actions">
+                <div class="identity-card">
+                    <span>目前身分</span>
+                    <strong><?= backend_e(backend_role_label($user['role'])) ?></strong>
+                </div>
+                <a class="logout-button" href="logout.php">登出</a>
             </div>
         </header>
 
