@@ -14,22 +14,30 @@ $employeeName = $_SESSION['employee_name'] ?? $_SESSION['employee_account'] ?? '
 $employeeRole = $_SESSION['employee_role'] ?? '';
 
 $scheduledWorks = [];
+$normalizedRole = strtolower((string)$employeeRole);
+$canViewAllWorks = in_array($normalizedRole, ['assetmanager', 'deptmanager'], true);
 
 try {
     $dsn = 'mysql:host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_NAME'] . ';port=' . $_ENV['DB_PORT'];
     $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    $where = "m.status NOT IN ('完成', '已簽核')";
+    $params = [];
+    if (!$canViewAllWorks) {
+        $where .= " AND m.technician_id = :employee_id";
+        $params[':employee_id'] = $employeeId;
+    }
+
     $stmt = $pdo->prepare(
-        "SELECT m.maint_id, m.asset_id, m.status, m.scheduled_time, m.action, m.details, e.fullname AS technician_name\n"
+        "SELECT m.maint_id, m.asset_id, m.status, m.scheduled_time, m.action, m.details, m.technician_id, e.fullname AS technician_name\n"
         . "FROM Maintenancelog m\n"
         . "LEFT JOIN Employees e ON m.technician_id = e.id_num\n"
-        . "WHERE m.technician_id = :employee_id\n"
-        . "  AND m.status NOT IN ('完成', '已簽核')\n"
+        . "WHERE {$where}\n"
         . "ORDER BY CASE WHEN m.status = '缺件' THEN 1 ELSE 0 END ASC,\n"
         . "         COALESCE(m.scheduled_time, '9999-12-31 23:59:59') ASC, m.maint_id ASC"
     );
-    $stmt->execute([':employee_id' => $employeeId]);
+    $stmt->execute($params);
     $scheduledWorks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Database error: ' . $e->getMessage());
@@ -142,6 +150,8 @@ try {
                     <thead>
                         <tr>
                             <th>項目</th>
+                            <th>資產</th>
+                            <th>維修員</th>
                             <th>安排時間</th>
                             <th>狀態</th>
                             <th>操作</th>
@@ -151,6 +161,8 @@ try {
                         <?php foreach ($scheduledWorks as $index => $work): ?>
                             <tr>
                                 <td>項目<?= $index + 1 ?> · <?= htmlspecialchars($work['maint_id']) ?></td>
+                                <td><?= htmlspecialchars($work['asset_id']) ?></td>
+                                <td><?= htmlspecialchars(($work['technician_name'] ?: $work['technician_id']) ?? '-') ?></td>
                                 <td><?= htmlspecialchars($work['scheduled_time']) ?></td>
                                 <td><span class="status-badge"><?= htmlspecialchars($work['status']) ?></span></td>
                                 <td class="action-links">
