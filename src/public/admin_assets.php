@@ -257,14 +257,40 @@ function collectFormData() {
     return data;
 }
 
+function shouldOfferDispatch(data) {
+    return data.current_status !== '報廢' && ['危險', '待修'].includes(data.health_level);
+}
+
+async function dispatchMaintenance(assetId) {
+    const response = await fetch('api/risk_warning.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
+        body: JSON.stringify({asset_id: assetId})
+    });
+    const payload = await response.json();
+    if (!payload.ok) throw new Error(payload.error || '派發工單失敗');
+    return payload.data;
+}
+
+async function offerDispatchIfNeeded(data) {
+    if (!shouldOfferDispatch(data)) return;
+    const ok = confirm(`${data.asset_id} 的健康度已設定為「${data.health_level}」，是否立即派發維修工單給維修人員？`);
+    if (!ok) return;
+    const result = await dispatchMaintenance(data.asset_id);
+    showFeedback(`資產已儲存，並已建立維修工單 ${result.maint_id}。`, 'success');
+}
+
 async function saveAsset(event) {
     event.preventDefault();
     formErrors.innerHTML = '';
+    const data = collectFormData();
+    const action = data.action;
     const response = await fetch('api/admin_assets.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         credentials: 'same-origin',
-        body: JSON.stringify(collectFormData())
+        body: JSON.stringify(data)
     });
     const payload = await response.json();
     if (!payload.ok) {
@@ -272,8 +298,13 @@ async function saveAsset(event) {
         return;
     }
     closeDrawer();
-    showFeedback(form.action.value === 'create' ? '資產已新增。' : '資產已更新。', 'success');
+    showFeedback(action === 'create' ? '資產已新增。' : '資產已更新。', 'success');
     await loadAssets(currentPage);
+    try {
+        await offerDispatchIfNeeded(data);
+    } catch (error) {
+        showFeedback(`資產已儲存，但派發維修工單失敗：${error.message}`, 'error');
+    }
 }
 
 function handleLoadError(error) {
