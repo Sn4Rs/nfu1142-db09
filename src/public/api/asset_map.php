@@ -39,8 +39,12 @@ function list_map_assets(PDO $pdo): array
     }
 
     if ($keyword !== '') {
-        $where[] = '(p.asset_id LIKE :q OR p.type LIKE :q OR p.sector_id LIKE :q OR a.model LIKE :q)';
-        $params['q'] = '%' . $keyword . '%';
+        $where[] = '(p.asset_id LIKE :q_asset OR p.type LIKE :q_type OR p.sector_id LIKE :q_sector OR a.model LIKE :q_model)';
+        $likeKeyword = '%' . $keyword . '%';
+        $params['q_asset'] = $likeKeyword;
+        $params['q_type'] = $likeKeyword;
+        $params['q_sector'] = $likeKeyword;
+        $params['q_model'] = $likeKeyword;
     }
 
     $sql = '

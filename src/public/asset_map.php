@@ -58,9 +58,6 @@ backend_render_header('資產地圖導覽', '依供電領地與健康度篩選�
         async function loadMap() {
             const form = document.getElementById('map-filter');
             const params = new URLSearchParams(new FormData(form));
-            if (query.get('asset_id')) {
-                params.set('q', query.get('asset_id'));
-            }
 
             const response = await fetch(`api/asset_map.php?${params.toString()}`, { credentials: 'same-origin' });
             const payload = await response.json();
@@ -82,7 +79,9 @@ backend_render_header('資產地圖導覽', '依供電領地與健康度篩選�
 
             const focusAsset = query.get('asset_id');
             if (focusAsset) {
-                showDetail(focusAsset);
+                showDetail(focusAsset).catch(error => {
+                    document.getElementById('asset-detail').innerHTML = `<div class="error-box">${escapeHtml(error.message)}</div>`;
+                });
             }
         }
 
