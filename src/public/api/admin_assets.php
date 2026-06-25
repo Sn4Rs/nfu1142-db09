@@ -136,8 +136,13 @@ function list_assets(PDO $pdo): void
     $params = [];
 
     if ($keyword !== '') {
-        $where[] = '(p.asset_id LIKE :q OR p.sector_id LIKE :q OR p.type LIKE :q OR p.spec_id LIKE :q OR a.model LIKE :q)';
-        $params['q'] = '%' . $keyword . '%';
+        $where[] = '(p.asset_id LIKE :q_asset OR p.sector_id LIKE :q_sector OR p.type LIKE :q_type OR p.spec_id LIKE :q_spec OR a.model LIKE :q_model)';
+        $likeKeyword = '%' . $keyword . '%';
+        $params['q_asset'] = $likeKeyword;
+        $params['q_sector'] = $likeKeyword;
+        $params['q_type'] = $likeKeyword;
+        $params['q_spec'] = $likeKeyword;
+        $params['q_model'] = $likeKeyword;
     }
 
     if ($type !== '') {

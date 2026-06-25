@@ -14,6 +14,7 @@ function backend_menu_items(): array
         ['file' => 'backend-notifications.php', 'label' => '角色通知', 'roles' => ['deptmanager', 'assetmanager', 'inspector', 'technician']],
         ['file' => 'backend-audit-log.php', 'label' => '權限稽核', 'roles' => ['deptmanager', 'assetmanager']],
         ['file' => 'admin_dashboard.php', 'label' => '管理後台總覽', 'roles' => ['deptmanager', 'assetmanager']],
+        ['file' => 'admin_assets.php', 'label' => '資產全面盤點', 'roles' => ['deptmanager', 'assetmanager']],
         ['file' => 'asset_map.php', 'label' => '資產地圖導覽', 'roles' => ['deptmanager', 'assetmanager']],
         ['file' => 'admin_sector.php', 'label' => '饋線領地管理', 'roles' => ['deptmanager', 'assetmanager']],
         ['file' => 'risk_warning.php', 'label' => '智慧預警中心', 'roles' => ['deptmanager', 'assetmanager']],
