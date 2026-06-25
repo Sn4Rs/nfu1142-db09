@@ -47,9 +47,9 @@ $dotenv->load();
                             m.name, ' - ', asp.model,
                             '\n電壓: ', asp.voltage, 'V / 電流: ', asp.amperage, 'A'
                         ) as spec_detail
-                    FROM PowerAsset pa
+                    FROM Powerasset pa
                     LEFT JOIN Sector s ON pa.sector_id = s.sector_id
-                    LEFT JOIN AssetSpec asp ON pa.spec_id = asp.spec_id
+                    LEFT JOIN Assetspec asp ON pa.spec_id = asp.spec_id
                     LEFT JOIN Manufacturer m ON asp.manufacturer_id = m.manufacturer_id";
 
             // Add search condition if query is present

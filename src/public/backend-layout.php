@@ -33,7 +33,7 @@ function backend_original_nav_items(string $role): array
     };
 }
 
-function backend_render_header(string $title, string $description = ''): void
+function backend_render_header(string $title, string $description = '', bool $includeLegacyAdminStyles = false): void
 {
     backend_require_login();
     $user = backend_user();
@@ -46,7 +46,8 @@ function backend_render_header(string $title, string $description = ''): void
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= backend_e($title) ?>｜後端管理</title>
-    <link rel="stylesheet" href="backend-admin.css">
+    <?php if ($includeLegacyAdminStyles): ?><link rel="stylesheet" href="css/style.css?v=<?= filemtime(__DIR__ . '/css/style.css') ?>"><?php endif; ?>
+    <link rel="stylesheet" href="backend-admin.css?v=<?= filemtime(__DIR__ . '/backend-admin.css') ?>">
 </head>
 <body>
 <div class="app-shell">
@@ -65,11 +66,9 @@ function backend_render_header(string $title, string $description = ''): void
                 <?php endif; ?>
             <?php endforeach; ?>
         </nav>
-
         <div class="sidebar-bottom">
             <strong><?= backend_e($user['name']) ?></strong>
             <span><?= backend_e(backend_role_label($user['role'])) ?></span>
-            <a href="logout.php">登出</a>
         </div>
     </aside>
 
@@ -79,9 +78,12 @@ function backend_render_header(string $title, string $description = ''): void
                 <h1><?= backend_e($title) ?></h1>
                 <?php if ($description !== ''): ?><p><?= backend_e($description) ?></p><?php endif; ?>
             </div>
-            <div class="identity-card">
-                <span>目前身分</span>
-                <strong><?= backend_e(backend_role_label($user['role'])) ?></strong>
+            <div class="page-header-actions">
+                <div class="identity-card">
+                    <span>目前身分</span>
+                    <strong><?= backend_e(backend_role_label($user['role'])) ?></strong>
+                </div>
+                <a class="logout-button" href="logout.php">登出</a>
             </div>
         </header>
 

@@ -55,15 +55,13 @@ INSERT INTO `Powerasset` (`asset_id`, `sector_id`, `type`, `spec_id`, `gps`) VAL
 -- 5. Employees (10 rows) — include inspectors and technicians
 -- inspector account/pwd: wangxm/password1, chendw/password2, lixh/password3, zhangml/password4, zhouzy/password7, caiwh/password9
 -- technician account/pwd: chendw/password2, zhangml/password4, wups/password8, zhengkx/password10
--- assetmanager account/pwd: liuzq/password5
--- deptmanager account/pwd: heyt/password6
+-- backend admin account/pwd: liuzq/password5
 INSERT INTO `Employees` (`id_num`, `fullname`, `role`, `account`, `userpwd`, `pwdhash`, `status`, `email`, `created_at`, `updated_at`) VALUES
 ('E001', '王小明', 'Inspector', 'wangxm', 'password1', '', 'active', 'wangxm@example.com', '2023-01-01 08:00:00', NULL),
 ('E002', '陳大文', 'Technician', 'chendw', 'password2', '', 'active', 'chendw@example.com', '2023-02-01 08:00:00', NULL),
 ('E003', '李小華', 'Inspector', 'lixh', 'password3', '', 'active', 'lixh@example.com', '2023-03-01 08:00:00', NULL),
 ('E004', '張美麗', 'Technician', 'zhangml', 'password4', '', 'active', 'zhangml@example.com', '2023-04-01 08:00:00', NULL),
 ('E005', '劉志強', 'assetmanager', 'liuzq', 'password5', '', 'active', 'liuzq@example.com', '2023-05-01 08:00:00', NULL),
-('E006', '何雅婷', 'deptmanager', 'heyt', 'password6', '', 'active', 'heyt@example.com', '2023-06-01 08:00:00', NULL),
 ('E007', '周正義', 'Inspector', 'zhouzy', 'password7', '', 'active', 'zhouzy@example.com', '2023-07-01 08:00:00', NULL),
 ('E008', '吳佩珊', 'Technician', 'wups', 'password8', '', 'active', 'wups@example.com', '2023-08-01 08:00:00', NULL),
 ('E009', '蔡文豪', 'Inspector', 'caiwh', 'password9', '', 'active', 'caiwh@example.com', '2023-09-01 08:00:00', NULL),
@@ -89,7 +87,7 @@ INSERT INTO `Inspectionlog` (`inspec_id`, `asset_id`, `inspector_id`, `observati
 ('IL003', 'ASSET003', 'E003', '絕緣子破損，需更換。', 60, '2026-01-20 14:00:00'),
 ('IL004', 'ASSET004', 'E004', '結構受損，立即維修。', 85, '2026-01-05 08:30:00'),
 ('IL005', 'ASSET005', 'E005', '木材劣化，建議更換。', 45, '2026-03-01 11:00:00'),
-('IL006', 'ASSET006', 'E006', '接地不良，需處理。', 70, '2026-02-28 13:15:00'),
+('IL006', 'ASSET006', 'E005', '接地不良，需處理。', 70, '2026-02-28 13:15:00'),
 ('IL007', 'ASSET007', 'E007', '一切正常。', 10, '2026-03-05 09:45:00'),
 ('IL008', 'ASSET008', 'E008', '線夾鬆脫，需緊固。', 55, '2026-01-18 15:20:00'),
 ('IL009', 'ASSET009', 'E009', '基礎沉降，注意監測。', 40, '2026-02-20 16:00:00'),

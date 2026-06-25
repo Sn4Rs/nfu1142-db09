@@ -1,6 +1,7 @@
 USE `csieDBTeam09`;
 
 -- 此 migration 只補上「後端管理」所需欄位與索引，不刪除既有資料。
+-- 已整合管理後台 API 欄位，讓 backend-* 頁面與 api/* 端點共用同一批資料表。
 
 CREATE TABLE IF NOT EXISTS `Notification` (
   `notification_id` varchar(50) NOT NULL,
@@ -25,6 +26,8 @@ CREATE TABLE IF NOT EXISTS `Auditlog` (
   `target_id` varchar(100) NULL,
   `old_data` longtext NULL,
   `new_data` longtext NULL,
+  `before_data` longtext NULL,
+  `after_data` longtext NULL,
   `ip_address` varchar(45) NULL,
   `result` varchar(20) NOT NULL DEFAULT '成功',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -46,9 +49,10 @@ CREATE TABLE IF NOT EXISTS `Importbatch` (
 CREATE TABLE IF NOT EXISTS `Importerror` (
   `error_id` varchar(50) NOT NULL,
   `batch_id` varchar(50) NOT NULL,
+  `row_no` int NOT NULL DEFAULT 0,
   `row_number` int NULL,
   `field_name` varchar(100) NULL,
-  `error_message` varchar(500) NULL,
+  `error_message` text NULL,
   `row_data` longtext NULL,
   PRIMARY KEY (`error_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -59,14 +63,17 @@ ALTER TABLE `Auditlog`
   ADD COLUMN IF NOT EXISTS `target_id` varchar(100) NULL,
   ADD COLUMN IF NOT EXISTS `old_data` longtext NULL,
   ADD COLUMN IF NOT EXISTS `new_data` longtext NULL,
+  ADD COLUMN IF NOT EXISTS `before_data` longtext NULL,
+  ADD COLUMN IF NOT EXISTS `after_data` longtext NULL,
   ADD COLUMN IF NOT EXISTS `ip_address` varchar(45) NULL,
   ADD COLUMN IF NOT EXISTS `result` varchar(20) NOT NULL DEFAULT '成功',
   ADD COLUMN IF NOT EXISTS `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 ALTER TABLE `Importerror`
+  ADD COLUMN IF NOT EXISTS `row_no` int NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS `row_number` int NULL,
   ADD COLUMN IF NOT EXISTS `field_name` varchar(100) NULL,
-  ADD COLUMN IF NOT EXISTS `error_message` varchar(500) NULL,
+  ADD COLUMN IF NOT EXISTS `error_message` text NULL,
   ADD COLUMN IF NOT EXISTS `row_data` longtext NULL;
 
 ALTER TABLE `Notification`

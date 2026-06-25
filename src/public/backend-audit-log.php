@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/backend-common.php';
 require_once __DIR__ . '/backend-layout.php';
-backend_require_roles(['deptmanager']);
+backend_require_roles(['deptmanager', 'assetmanager']);
 
 $pdo = backend_db();
 

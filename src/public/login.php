@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 			// Query by `account` per schema, prefer `pwdhash` for verification
-			$stmt = $pdo->prepare('SELECT id_num, fullname, role, account, userpwd, pwdhash FROM Employees WHERE account = ? LIMIT 1');
+			$stmt = $pdo->prepare("SELECT id_num, fullname, role, account, userpwd, pwdhash FROM Employees WHERE account = ? AND status = 'active' LIMIT 1");
 			$stmt->execute([$userhandle]);
 			$employee = $stmt->fetch(PDO::FETCH_ASSOC);
 

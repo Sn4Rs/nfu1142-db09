@@ -157,7 +157,16 @@ CREATE TABLE IF NOT EXISTS `Auditlog`(
   `audit_id` varchar(50) PRIMARY KEY NOT NULL comment '稽核紀錄編號',
   `employee_id` varchar(10) NOT NULL comment '操作人員',
   `function_name` varchar(100) NOT NULL comment '操作功能名稱',
-  `action_type` enum('新增','修改','刪除','簽核','登入','匯入') NOT NULL comment '操作類型'
+  `action_type` enum('新增','修改','刪除','簽核','登入','匯入','匯出') NOT NULL comment '操作類型',
+  `target_type` varchar(100) comment '異動資料類型',
+  `target_id` varchar(100) comment '異動資料主鍵',
+  `old_data` longtext comment '異動前內容(JSON)',
+  `new_data` longtext comment '異動後內容(JSON)',
+  `before_data` longtext comment '異動前內容(JSON，相容管理後台API)',
+  `after_data` longtext comment '異動後內容(JSON，相容管理後台API)',
+  `ip_address` varchar(45) comment '操作者IP',
+  `result` varchar(20) NOT NULL DEFAULT '成功' comment '操作結果',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() comment '操作時間'
 );
 
 CREATE TABLE IF NOT EXISTS `Importbatch`(
@@ -173,7 +182,12 @@ CREATE TABLE IF NOT EXISTS `Importbatch`(
 
 CREATE TABLE IF NOT EXISTS `Importerror`(
   `error_id` varchar(50) PRIMARY KEY NOT NULL comment '匯入錯誤編號',
-  `batch_id` varchar(50) NOT NULL comment '所屬匯入批次'
+  `batch_id` varchar(50) NOT NULL comment '所屬匯入批次',
+  `row_no` int NOT NULL DEFAULT 0 comment 'CSV原始列號，相容管理後台API',
+  `row_number` int comment 'CSV原始列號，相容後端匯入頁',
+  `field_name` varchar(100) comment '錯誤欄位',
+  `error_message` text comment '錯誤原因',
+  `row_data` longtext comment '原始資料列(JSON)'
 );
 
 
